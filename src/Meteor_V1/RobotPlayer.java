@@ -5,6 +5,7 @@ import battlecode.common.*;
 public strictfp class RobotPlayer {
 
     private static Robot robot = null;
+    private static int turnCount = 0;
 
     public static void run(RobotController rc) throws GameActionException {
         switch (rc.getType()) {
@@ -19,6 +20,9 @@ public strictfp class RobotPlayer {
         }
 
         while (true) {
+            turnCount += 1;
+            if(turnCount >= 150) return; // For test
+
             try {
                 robot.step();
                 Clock.yield();
