@@ -1,4 +1,3 @@
-
 package Meteor_V1;
 
 import battlecode.common.*;

@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public class Robot {
 
-    private RobotController rc;
+    protected RobotController rc;
 
     public Robot(RobotController rc) throws GameActionException {
         this.rc = rc;

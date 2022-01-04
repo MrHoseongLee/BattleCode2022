@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public strictfp class RobotPlayer {
 
-    static Robot robot = null;
+    private static Robot robot = null;
 
     public static void run(RobotController rc) throws GameActionException {
         switch (rc.getType()) {
