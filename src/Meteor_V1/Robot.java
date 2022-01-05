@@ -4,10 +4,14 @@ import battlecode.common.*;
 
 import java.util.Random;
 
+import java.lang.Math;
+
 public class Robot {
 
     protected RobotController rc;
+
     protected MapLocation currentLocation;
+    protected MapLocation previousLocation;
 
     protected static final Random RNG = new Random(6147);
 
@@ -33,41 +37,49 @@ public class Robot {
     }
 
     public void step() throws GameActionException {
-        this.currentLocation = rc.getLocation();
+        previousLocation = (rc.getLocation().equals(currentLocation)) ? previousLocation : currentLocation;
+        currentLocation = rc.getLocation();
+    }
 
+    protected void draw() throws GameActionException {
         if (target != null) {
             rc.setIndicatorDot(target, 0, 255, 0);
-            rc.setIndicatorLine(currentLocation, target, 255, 0, 0);
+            rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 0);
         }
+    }
+
+    protected void setTarget(MapLocation target) {
+        this.previousLocation = currentLocation;
+        this.target = target;
     }
 
     protected Direction getNextDir() throws GameActionException {
 
         if (target == null) { return Direction.CENTER; }
 
-        int bestValue = INF;
-        int originalDistance = currentLocation.distanceSquaredTo(target);
+        double bestValue = INF;
 
         Direction bestDirection = Direction.CENTER;
+        int originalDistance = currentLocation.distanceSquaredTo(target);
 
         for(Direction direction : directions) {
             if (!rc.canMove(direction)) { continue; }
 
             MapLocation nextLocation = currentLocation.add(direction);
 
-            int distance = nextLocation.distanceSquaredTo(target);
-            int value = distance + valueFunction(nextLocation);
+            if (nextLocation.equals(previousLocation)) { continue; }
 
-            if (distance > originalDistance) { value += 1000; }
-            if (distance == 0) { value = -INF; }
+            int distance = nextLocation.distanceSquaredTo(target);
+
+            if (distance == 0) { bestDirection = direction; break; }
+
+            double value = Math.sqrt(distance) + rc.senseRubble(nextLocation) / 10;
+
+            if (distance > originalDistance) { value += Math.sqrt(distance - originalDistance) * 2; }
 
             if (value < bestValue) { bestValue = value; bestDirection = direction; }
         }
 
         return bestDirection;
-    }
-
-    protected int valueFunction(MapLocation location) throws GameActionException {
-        return -100 / (1 + rc.senseRubble(location));
     }
 }

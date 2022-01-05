@@ -46,6 +46,8 @@ public strictfp class Miner extends Droid {
         Direction direction = getNextDir();
         if (rc.canMove(direction)) { rc.move(direction); }
 
+        super.draw();
+
     }
 
     private int getID() throws GameActionException {
@@ -68,7 +70,7 @@ public strictfp class Miner extends Droid {
                 int distance = currentLocation.distanceSquaredTo(location);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    target = location;
+                    setTarget(location);
                 }
             }
         }
@@ -77,6 +79,6 @@ public strictfp class Miner extends Droid {
     }
 
     private void selectRandomTarget() throws GameActionException {
-        target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
+        setTarget(new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight())));
     }
 }
