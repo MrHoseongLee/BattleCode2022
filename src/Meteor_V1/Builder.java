@@ -40,7 +40,7 @@ public strictfp class Builder extends Droid {
 
             case RETURN: // Return to the archon
 
-                if(currentLocation.isAdjacentTo(archonLocation)) { target = null; phase = Phase.BUILD; }
+                if(currentLocation.isAdjacentTo(archonLocation)) { target = null; phase = Phase.BUILD; return; }
 
                 break;
         }

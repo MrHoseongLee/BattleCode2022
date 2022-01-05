@@ -46,10 +46,10 @@ public class Robot {
     public void step() throws GameActionException {
         this.currentLocation = rc.getLocation();
 
-        /*if (target != null) {
+        if (target != null) {
             rc.setIndicatorDot(target, 0, 255, 0);
             rc.setIndicatorLine(currentLocation, target, 255, 0, 0);
-        }*/
+        }
     }
 
     protected void move() throws GameActionException {

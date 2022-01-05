@@ -55,7 +55,7 @@ public strictfp class Soldier extends Droid {
 
         nearbyRobots = rc.senseNearbyRobots();
 
-        if (attackTarget == null || !rc.canSenseRobotAtLocation(attackTarget)) { FindAttackTarget(); }
+        FindAttackTarget();
 
         switch (mode) {
             case Scout:
