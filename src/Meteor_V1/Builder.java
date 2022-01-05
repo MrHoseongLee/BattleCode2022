@@ -10,7 +10,6 @@ public strictfp class Builder extends Droid {
 
     private Phase phase = Phase.BUILD;
     private MapLocation archonLocation;
-    private int minR = INF;
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
@@ -27,55 +26,57 @@ public strictfp class Builder extends Droid {
     public void step() throws GameActionException {
         super.step();
 
+        Direction dir;
         switch (phase) {
             case BUILD: // Move to an appropriate location and build a watchtower
 
                 // Change target if target is already occupied
                 if(target != null && isThereBuilding(target))
-                    resetPath();
+                    target = null;
 
-                if(target == null) {
-                    // Calculate target and path
-                    updateMinR();
-                    dijkstra((loc, r) -> r == minR ? -10000 : r);
-                } else {
-                    if(path.size() == 1) {
-                        Direction dir = path.peek();
-                        //if (rc.getTeamLeadAmount(rc.getTeam()) < 180) return;
-                        if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
-                            rc.buildRobot(RobotType.WATCHTOWER, dir);
-                            resetPath();
-                            phase = Phase.RETURN;
-                        }
-                    } else super.move();
+                if(target == null)
+                    FindTarget();
+
+                dir = getNextDir(target);
+                if(currentLocation.add(dir).equals(target) && rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+                    rc.buildRobot(RobotType.WATCHTOWER, dir);
+                    target = null;
+                    phase = Phase.RETURN;
+                    break;
                 }
+                if(rc.canMove(dir))
+                    rc.move(dir);
+
                 break;
 
             case RETURN: // Return to the archon
-                if(target == null) {
-                    // Calculate target and path
-                    dijkstra((loc, r) -> loc.isAdjacentTo(archonLocation) ? -10000 : r);
-                } else {
-                    super.move();
-                    if(path.isEmpty()) {
-                        resetPath();
-                        phase = Phase.BUILD;
-                    }
+                if(currentLocation.isAdjacentTo(archonLocation)) {
+                    phase = Phase.BUILD;
+                    break;
                 }
+
+                dir = getNextDir(archonLocation);
+                if(rc.canMove(dir))
+                    rc.move(dir);
+
                 break;
         }
-
-
     }
 
-    private void updateMinR() throws GameActionException {
-        minR = INF;
+    private void FindTarget() throws GameActionException {
+        int minR = INF;
+        int targetDist = INF;
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
                 MapLocation loc = new MapLocation(currentLocation.x + dx, currentLocation.y + dy);
                 if(!rc.canSenseLocation(loc) || isThereBuilding(loc)) continue;
                 int r = (1 + rc.senseRubble(loc) / 10);
-                minR = Math.min(minR, r);
+                int dist = currentLocation.distanceSquaredTo(loc);
+                if(r < minR || (r == minR && dist < targetDist)) {
+                    minR = r;
+                    target = loc;
+                    targetDist = dist;
+                }
             }
         }
     }

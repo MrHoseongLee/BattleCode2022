@@ -8,13 +8,6 @@ import java.util.Stack;
 
 public strictfp class Miner extends Droid {
 
-    /**
-     * Weights of resources. For dijkstra.
-     */
-    private static final int leadWeight = -100;
-    private static final int goldWeight = -500;
-
-
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -32,32 +25,41 @@ public strictfp class Miner extends Droid {
             return;
         }
 
-        // Change target if another miner is already mining
-        if(target != null && rc.canSenseRobotAtLocation(target))
-            resetPath();
+        // Arrived
+        if(currentLocation.equals(target))
+            target = null;
 
-        if(target == null) {
-            // Calculate target and path
-            dijkstra((loc, r)
-                    -> 20 * r
-                    + (rc.senseLead(loc) * leadWeight + rc.senseGold(loc) * goldWeight) / r);
-        } else {
-            super.move();
-        }
+        // Another miner is already arrived
+        if(target != null && rc.canSenseRobotAtLocation(target) && rc.senseRobotAtLocation(target).getType() == RobotType.MINER)
+            target = null;
+
+        if(target == null)
+            FindTarget();
+
+        if(target == null) return; // TODO: when resource is not found
+
+        Direction dir = getNextDir(target);
+        if(rc.canMove(dir))
+            rc.move(dir);
     }
 
-    /**
-     * Check whether there is any resource in the vision radius(20) of this miner
-     * @return true / false
-     */
-    private boolean resourceExists() throws GameActionException {
+    private void FindTarget() throws GameActionException {
+        int targetDist = INF;
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
                 MapLocation loc = new MapLocation(currentLocation.x + dx, currentLocation.y + dy);
-                if(rc.canSenseLocation(loc) && !rc.canSenseRobotAtLocation(loc) && rc.senseLead(loc) + rc.senseLead(loc) > 0)
-                    return true;
+                if(rc.canSenseLocation(loc)
+                        && !rc.canSenseRobotAtLocation(loc)
+                        && rc.senseLead(loc) + rc.senseLead(loc) > 0) {
+                    //int r = (1 + rc.senseRubble(loc) / 10);
+                    //int dist = -100 / r;
+                    int dist = currentLocation.distanceSquaredTo(loc);
+                    if(dist < targetDist) {
+                        targetDist = dist;
+                        target = loc;
+                    }
+                }
             }
         }
-        return false;
     }
 }

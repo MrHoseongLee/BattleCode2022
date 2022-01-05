@@ -61,84 +61,32 @@ public class Robot {
         this.currentLocation = rc.getLocation();
     }
 
-    protected void move() throws GameActionException {
-        if (target == null) { return; }
+    protected Direction getNextDir(MapLocation target) throws GameActionException {
+        int bestValue = INF;
+        Direction bestDir = Direction.CENTER;
+        int origDist = currentLocation.distanceSquaredTo(target);
 
-        if (path.isEmpty()) {
-            resetPath();
-            return;
-        }
+        for(Direction dir : directions) {
+            MapLocation loc = currentLocation.add(dir);
+            if(!rc.canMove(dir)) continue;
 
-        Direction dir = path.peek();
-        if (rc.canMove(dir)) {
-            rc.move(dir);
-            path.pop();
-        }
-    }
+            int dist = loc.distanceSquaredTo(target);
+            int value = dist + valueFunction(loc);
 
-    protected void resetPath() {
-        target = null;
-        path = null;
-    }
+            if(dist > origDist) value += 1000;
+            if(dist == 0) value = -INF;
 
-    /**
-     * Run dijkstra to find the best resource to mine in the vision radius.
-     * After found, update 'target' and 'path'.
-     */
-    protected void dijkstra(WeightFunction W) throws GameActionException {
-        PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a.d));
-        int[][] dist = new int[9][9];
-        Direction[][] from = new Direction[9][9];
-        for(int i=0; i<9; ++i)
-            for(int j=0; j<9; ++j)
-                dist[i][j] = INF;
-
-        final int x = currentLocation.x-4, y = currentLocation.y-4;
-        MapLocation best = currentLocation;
-        int bestd = 0;
-        pq.add(new Node(0, currentLocation));
-        dist[4][4] = 0;
-
-        for (int t = 0; t < 100; ++t) {
-            if(pq.isEmpty()) break;
-            if(bestd < 0) break;
-            Node u = pq.poll();
-
-            if (dist[u.loc.y-y][u.loc.x-x] < u.d) continue;
-
-            for (Direction dir : directions) {
-                MapLocation loc = u.loc.add(dir);
-                //if(dist.get(loc) != null) continue;
-                if (!rc.canSenseLocation(loc)) continue;
-                if (rc.canSenseRobotAtLocation(loc)) continue;
-
-                int i = loc.y-y, j = loc.x-x;
-                if(dist[i][j] != INF) continue; // not optimal, but needed since there are negative cycles
-
-                int r = (1 + rc.senseRubble(loc) / 10);
-                int d = u.d + W.getWeight(loc, r);
-
-                if (d < dist[i][j]) {
-                    pq.add(new Node(d, loc));
-                    dist[i][j] = d;
-                    from[i][j] = dir;
-                    if(d < bestd) {
-                        best = loc;
-                        bestd = d;
-                    }
-                }
+            if(value < bestValue) {
+                bestValue = value;
+                bestDir = dir;
             }
         }
 
-        target = best;
-        //System.out.println("target = " + target);
-        path = new Stack<>();
-        while(!best.equals(currentLocation)) {
-            Direction dir = from[best.y - y][best.x - x];
-            path.add(dir);
-            best = best.subtract(dir);
-            //System.out.println("cur = " + best);
-        }
+        return bestDir;
+    }
+
+    protected int valueFunction(MapLocation loc) throws GameActionException {
+        return -100 / (1 + rc.senseRubble(loc));
     }
 }
 
