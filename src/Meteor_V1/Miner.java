@@ -27,10 +27,6 @@ public strictfp class Miner extends Droid {
         }
     }
 
-    private Direction defaultDir = null;  // If there is no resource in the vision radius, then move in defaultDir
-    private MapLocation target = null;    // Location of the target resource
-    private Stack<Direction> path = null; // Sequence of moves toward the target resource
-
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -41,48 +37,28 @@ public strictfp class Miner extends Droid {
     public void step() throws GameActionException {
         super.step();
 
-        // Mine here if possible
-        if(rc.senseLead(me) + rc.senseGold(me) > 0) {
-            while (rc.canMineGold(me)) {
-                rc.mineGold(me);
-            }
-            while (rc.canMineLead(me)) {
-                rc.mineLead(me);
-            }
-            return;
+        // Mine if possible
+        if(rc.senseLead(currentLocation) + rc.senseGold(currentLocation) > 0) {
+            while (rc.canMineGold(currentLocation)) { rc.mineGold(currentLocation); }
+            while (rc.canMineLead(currentLocation)) { rc.mineLead(currentLocation); }
         }
 
-        if(target == null) { // If target resource is not chosen
-            if(!resourceExists()) { // If there is no resource, then move in defaultDir
-                if(defaultDir == null)
-                    defaultDir = directions[rng.nextInt(directions.length)];
-                for(int i=0; i<8; ++i)
-                    if(!rc.canMove(defaultDir))
-                        defaultDir = defaultDir.rotateRight();
-                if (rc.canMove(defaultDir)) {
-                    rc.move(defaultDir);
-                }
-                return;
-            }
-            defaultDir = null;
+        super.move();
+    }
 
-            dijkstra(); // Search using dijkstra
-
-        } else { // Move along the path
-            if(path.isEmpty()) {
-                target = null;
-                path = null;
-            } else {
-                Direction dir = path.peek();
-                if (rc.canMove(dir)) {
-                    rc.move(dir);
-                    path.pop();
-                } else if(rc.canSenseRobotAtLocation(me.add(dir))) {
-                    target = null;
-                    path = null;
-                }
+    /**
+     * Check whether there is any resource in the vision radius(20) of this miner
+     * @return true / false
+     */
+    private boolean resourceExists() throws GameActionException {
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dy = -4; dy <= 4; dy++) {
+                MapLocation loc = new MapLocation(currentLocation.x + dx, currentLocation.y + dy);
+                if(rc.canSenseLocation(loc) && rc.senseLead(loc) + rc.senseLead(loc) > 0)
+                    return true;
             }
         }
+        return false;
     }
 
     /**
@@ -97,10 +73,10 @@ public strictfp class Miner extends Droid {
             for(int j=0; j<9; ++j)
                 dist[i][j] = INF;
 
-        final int x = me.x-4, y = me.y-4;
-        MapLocation best = me;
+        final int x = currentLocation.x-4, y = currentLocation.y-4;
+        MapLocation best = currentLocation;
         int bestd = 0;
-        pq.add(new Node(0, me));
+        pq.add(new Node(0, currentLocation));
         dist[4][4] = 0;
 
         for (int t = 0; t < 100; ++t) {
@@ -139,7 +115,7 @@ public strictfp class Miner extends Droid {
         target = best;
         //System.out.println("target = " + target);
         path = new Stack<>();
-        while(!best.equals(me)) {
+        while(!best.equals(currentLocation)) {
             Direction dir = from[best.y - y][best.x - x];
             path.add(dir);
             best = best.subtract(dir);
