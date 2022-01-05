@@ -4,9 +4,7 @@ import battlecode.common.*;
 
 public strictfp class Builder extends Droid {
 
-    private enum Phase {
-        BUILD, RETURN
-    }
+    private enum Phase { BUILD, RETURN }
 
     private Phase phase = Phase.BUILD;
     private MapLocation archonLocation;
@@ -14,10 +12,10 @@ public strictfp class Builder extends Droid {
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
 
-        for(Direction dir : directions) {
-            MapLocation loc = currentLocation.add(dir);
-            if(rc.canSenseRobotAtLocation(loc) && rc.senseRobotAtLocation(loc).getType() == RobotType.ARCHON) {
-                archonLocation = loc;
+        for (Direction direction : directions) {
+            MapLocation location = currentLocation.add(direction);
+            if (rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType() == RobotType.ARCHON) {
+                archonLocation = location;
                 break;
             }
         }
@@ -26,62 +24,57 @@ public strictfp class Builder extends Droid {
     public void step() throws GameActionException {
         super.step();
 
-        Direction dir;
         switch (phase) {
             case BUILD: // Move to an appropriate location and build a watchtower
 
                 // Change target if target is already occupied
-                if(target != null && isThereBuilding(target))
-                    target = null;
+                if (target != null && rc.canSenseLocation(target) && isThereBuilding(target)) { target = null; }
 
-                if(target == null)
-                    FindTarget();
+                if (target == null) { FindTarget(); }
 
-                dir = getNextDir(target);
-                if(currentLocation.add(dir).equals(target) && rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
-                    rc.buildRobot(RobotType.WATCHTOWER, dir);
-                    target = null;
-                    phase = Phase.RETURN;
-                    break;
+                if (currentLocation.isAdjacentTo(target)) {
+                    Direction direction = currentLocation.directionTo(target);
+                    if (rc.canBuildRobot(RobotType.WATCHTOWER, direction)) {
+                        rc.buildRobot(RobotType.WATCHTOWER, direction);
+                        target = null;
+                        phase = Phase.RETURN;
+                    }
                 }
-                if(rc.canMove(dir))
-                    rc.move(dir);
 
                 break;
 
             case RETURN: // Return to the archon
-                if(currentLocation.isAdjacentTo(archonLocation)) {
-                    phase = Phase.BUILD;
-                    break;
-                }
 
-                dir = getNextDir(archonLocation);
-                if(rc.canMove(dir))
-                    rc.move(dir);
+                if(currentLocation.isAdjacentTo(archonLocation)) { phase = Phase.BUILD; }
 
                 break;
         }
+
+        Direction direction = getNextDir();
+        if(rc.canMove(direction)) { rc.move(direction); }
     }
 
     private void FindTarget() throws GameActionException {
-        int minR = INF;
-        int targetDist = INF;
-        for (int dx = -4; dx <= 4; dx++) {
-            for (int dy = -4; dy <= 4; dy++) {
-                MapLocation loc = new MapLocation(currentLocation.x + dx, currentLocation.y + dy);
-                if(!rc.canSenseLocation(loc) || isThereBuilding(loc)) continue;
-                int r = (1 + rc.senseRubble(loc) / 10);
-                int dist = currentLocation.distanceSquaredTo(loc);
-                if(r < minR || (r == minR && dist < targetDist)) {
-                    minR = r;
-                    target = loc;
-                    targetDist = dist;
-                }
+        int minRubble = INF;
+        int minDistance = INF;
+
+        MapLocation[] locations = rc.getAllLocationsWithinRadiusSquared(currentLocation, 20);
+
+        for (MapLocation location : locations) {
+            if (isThereBuilding(location)) { continue; }
+
+            int rubble = rc.senseRubble(location);
+            int distance = currentLocation.distanceSquaredTo(location);
+
+            if (rubble < minRubble || (rubble == minRubble && distance < minDistance)) {
+                minRubble = rubble;
+                minDistance = distance;
+                target = location;
             }
         }
     }
 
-    private boolean isThereBuilding(MapLocation loc) throws GameActionException {
-        return rc.canSenseRobotAtLocation(loc) && rc.senseRobotAtLocation(loc).getType().isBuilding();
+    private boolean isThereBuilding(MapLocation location) throws GameActionException {
+        return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
 }

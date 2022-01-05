@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public strictfp class Archon extends Building {
 
-    private int builderCnt = 0; // For test
+    private int builderCnt = 0;
     private int previousMinerSignal = 0;
 
     public Archon(RobotController rc) throws GameActionException {
@@ -26,18 +26,29 @@ public strictfp class Archon extends Building {
 
         int minerCnt = getMinerCount();
 
-        if (minerCnt < 4) {
-            Direction dir = directions[rng.nextInt(directions.length)];
-            if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                rc.buildRobot(RobotType.MINER, dir);
-            }
-        }
+        if (minerCnt < 4) { buildDroid(RobotType.MINER); }
 
         if(builderCnt < 1) {
-            Direction dir = directions[rng.nextInt(directions.length)];
-            if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
-                rc.buildRobot(RobotType.BUILDER, dir);
-                builderCnt++;
+            if (buildDroid(RobotType.BUILDER)) {
+                builderCnt += 1;
+            }
+        }
+    }
+
+    private boolean buildDroid(RobotType robotType) throws GameActionException {
+        for (Direction direction : directions) {
+            if (rc.canBuildRobot(robotType, direction)) {
+                rc.buildRobot(robotType, direction);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void buildDroids(RobotType robotType) throws GameActionException {
+        for (Direction direction : directions) {
+            if (rc.canBuildRobot(robotType, direction)) {
+                rc.buildRobot(robotType, direction);
             }
         }
     }

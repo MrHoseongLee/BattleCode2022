@@ -32,5 +32,4 @@ public strictfp class RobotPlayer {
             } 
         }
     }
-
 }

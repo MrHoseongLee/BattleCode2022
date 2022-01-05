@@ -10,5 +10,4 @@ public strictfp class Droid extends Robot {
     public void step() throws GameActionException {
         super.step();
     }
-
 }
