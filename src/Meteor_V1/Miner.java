@@ -8,6 +8,9 @@ import java.util.Stack;
 
 public strictfp class Miner extends Droid {
 
+    private int ID = -1;
+    private int previousMinerSignal = 0;
+
     /**
      * Weights of resources. For dijkstra.
      */
@@ -17,6 +20,7 @@ public strictfp class Miner extends Droid {
 
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
+        previousMinerSignal = rc.readSharedArray(62) << 16 + rc.readSharedArray(63);
     }
 
     /**
@@ -25,8 +29,13 @@ public strictfp class Miner extends Droid {
     public void step() throws GameActionException {
         super.step();
 
+        if (ID == 0) { ID = getID(); }
+        if (ID <  0) { ID += 1; }
+
+        signal();
+
         // Mine if possible
-        if(rc.senseLead(currentLocation) + rc.senseGold(currentLocation) > 0) {
+        if (rc.senseLead(currentLocation) + rc.senseGold(currentLocation) > 0) {
             while (rc.canMineGold(currentLocation)) { rc.mineGold(currentLocation); }
             while (rc.canMineLead(currentLocation)) { rc.mineLead(currentLocation); }
             return;
@@ -43,6 +52,19 @@ public strictfp class Miner extends Droid {
                     + (rc.senseLead(loc) * leadWeight + rc.senseGold(loc) * goldWeight) / r);
         } else {
             super.move();
+        }
+    }
+
+    private int getID() throws GameActionException {
+        return 1 + Integer.numberOfLeadingZeros(~((rc.readSharedArray(62) << 16 + rc.readSharedArray(63)) ^ previousMinerSignal));
+    }
+
+    private void signal() throws GameActionException {
+        if (ID <= 0 || ID > 32) { return; }
+        if (ID <= 16) {
+            rc.writeSharedArray(62, rc.readSharedArray(62) ^ ((1 << 16) >> (ID)));
+        } else {
+            rc.writeSharedArray(63, rc.readSharedArray(63) ^ ((1 << 32) >> (ID)));
         }
     }
 
