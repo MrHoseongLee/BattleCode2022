@@ -21,7 +21,7 @@ public strictfp class Miner extends Droid {
     public void step() throws GameActionException {
         super.step();
 
-        if (ID == 0) { ID = getID(); if (ID > 16) { offset = 1; }; }
+        if (ID == 0) { ID = getID(); if (ID > 16) { offset = 1; } }
         if (ID <  0) { ID += 1; }
 
         signal();
@@ -32,20 +32,14 @@ public strictfp class Miner extends Droid {
             return;
         }
 
-        // Arrived
-        if (currentLocation.equals(target)) { target = null; }
-
         // Another miner is already arrived
         if (target != null && rc.canSenseRobotAtLocation(target) && rc.senseRobotAtLocation(target).getType() == RobotType.MINER) {
             target = null;
         }
 
         if (target == null || isScouting) { FindTarget(); }
-        if (target == null) { selectRandomTarget(); }
 
-        Direction direction = getNextDir();
-        if (rc.canMove(direction)) { rc.move(direction); }
-
+        super.move();
     }
 
     private int getID() throws GameActionException {
@@ -74,9 +68,5 @@ public strictfp class Miner extends Droid {
         }
 
         isScouting = (minDistance == INF);
-    }
-
-    private void selectRandomTarget() throws GameActionException {
-        target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
     }
 }

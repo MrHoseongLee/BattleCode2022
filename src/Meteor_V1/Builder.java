@@ -7,51 +7,45 @@ public strictfp class Builder extends Droid {
     private enum Phase { BUILD, RETURN }
 
     private Phase phase = Phase.BUILD;
-    private MapLocation archonLocation;
+    private final MapLocation archonLocation;
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
 
-        for (Direction direction : directions) {
-            MapLocation location = currentLocation.add(direction);
-            if (rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType() == RobotType.ARCHON) {
-                archonLocation = location;
-                break;
-            }
-        }
+        archonLocation = getParentArchonLocation();
     }
 
     public void step() throws GameActionException {
         super.step();
 
+        Direction direction;
         switch (phase) {
             case BUILD: // Move to an appropriate location and build a watchtower
-
                 // Change target if target is already occupied
                 if (target != null && rc.canSenseLocation(target) && isThereBuilding(target)) { target = null; }
 
                 if (target == null) { FindTarget(); }
 
                 if (currentLocation.isAdjacentTo(target)) {
-                    Direction direction = currentLocation.directionTo(target);
+                    direction = currentLocation.directionTo(target);
                     if (rc.canBuildRobot(RobotType.WATCHTOWER, direction)) {
                         rc.buildRobot(RobotType.WATCHTOWER, direction);
-                        target = null;
+                        target = archonLocation;
                         phase = Phase.RETURN;
                     }
+                    return;
                 }
 
                 break;
 
             case RETURN: // Return to the archon
 
-                if(currentLocation.isAdjacentTo(archonLocation)) { phase = Phase.BUILD; }
+                if(currentLocation.isAdjacentTo(archonLocation)) { target = null; phase = Phase.BUILD; }
 
                 break;
         }
 
-        Direction direction = getNextDir();
-        if(rc.canMove(direction)) { rc.move(direction); }
+        super.move();
     }
 
     private void FindTarget() throws GameActionException {
@@ -63,7 +57,7 @@ public strictfp class Builder extends Droid {
         for (MapLocation location : locations) {
             if (isThereBuilding(location)) { continue; }
 
-            int rubble = rc.senseRubble(location);
+            int rubble = rc.senseRubble(location) / 10;
             int distance = currentLocation.distanceSquaredTo(location);
 
             if (rubble < minRubble || (rubble == minRubble && distance < minDistance)) {
@@ -72,9 +66,5 @@ public strictfp class Builder extends Droid {
                 target = location;
             }
         }
-    }
-
-    private boolean isThereBuilding(MapLocation location) throws GameActionException {
-        return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
 }

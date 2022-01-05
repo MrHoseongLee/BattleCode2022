@@ -5,6 +5,7 @@ import battlecode.common.*;
 public strictfp class Archon extends Building {
 
     private int builderCnt = 0;
+    private int soldierCnt = 0;
     private int previousMinerSignal = 0;
 
     public Archon(RobotController rc) throws GameActionException {
@@ -31,6 +32,12 @@ public strictfp class Archon extends Building {
         if(builderCnt < 1) {
             if (buildDroid(RobotType.BUILDER)) {
                 builderCnt += 1;
+            }
+        }
+
+        if(soldierCnt < 10) {
+            if (buildDroid(RobotType.SOLDIER)) {
+                soldierCnt += 1;
             }
         }
     }
