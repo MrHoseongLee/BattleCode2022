@@ -108,4 +108,16 @@ public class Robot {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
 
+    protected MapLocation bestLocationNextToLocation(MapLocation location) throws GameActionException {
+        MapLocation[] neighbors = rc.getAllLocationsWithinRadiusSquared(location, 2); // TODO HARDCODE TO SAVE BYTECODE
+        int minRubble = INF;
+        MapLocation bestNeighbor = location;
+        for (MapLocation neighbor : neighbors) {
+            if (rc.canSenseRobotAtLocation(location)) { continue; }
+            int rubble = rc.senseRubble(neighbor);
+            if (rubble < minRubble) { minRubble = rubble; bestNeighbor = neighbor; }
+        }
+        return bestNeighbor;
+    }
+
 }
