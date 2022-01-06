@@ -7,25 +7,28 @@ import java.util.Collections;
 public strictfp class Soldier extends Droid {
 
     private enum Mode {
-        Wait, Wander, Scout, Raid
+        Wander, Raid,
+        //Wait, Guard, Scout   // not used for current version
     }
 
-    private Mode mode = Mode.Wait;
+    private Mode mode = Mode.Wander;
     private RobotInfo[] nearbyRobots;
     private MapLocation attackTarget = null;
-    private int enemyArchonLocationIdx = 0;
+    //private RobotInfo guardInfo = null;
+    //private int enemyArchonLocationIdx = 0;
 
     private final Team opponent;
-    private final MapLocation parentArchonLocation;
-    private final MapLocation[] enemyArchonLocations;
     private int parentArchonIdx;
+    private final MapLocation parentArchonLocation;
+    //private final MapLocation[] enemyArchonLocations;
 
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
+        RNG.setSeed(rc.readSharedArray(18));
 
         opponent = rc.getTeam().opponent();
         parentArchonLocation = getParentArchonLocation();
-        enemyArchonLocations = getEnemyArchonLocations();
+        //enemyArchonLocations = getEnemyArchonLocations();
 
         int n = rc.readSharedArray(0);
         for (int i = 0; i < n; ++i) {
@@ -42,12 +45,30 @@ public strictfp class Soldier extends Droid {
 
         nearbyRobots = rc.senseNearbyRobots();
 
-        receiveCommand();
+        //receiveCommand();
+
+        if (rc.readSharedArray(30) > 1000 && rc.readSharedArray(0) == rc.readSharedArray(1)) mode = Mode.Raid;
 
         findAttackTarget();
 
         switch (mode) {
-            case Wait:
+
+            case Wander:
+                if (attackTarget != null) { setTarget(attackTarget); }
+                if (target != null && target.equals(currentLocation)) { target = null; }
+                if (target == null) { selectRandomTarget(); }
+                break;
+
+            case Raid:
+                if (target == null || isThereNoEnemyArchon(target)) {
+                    int i = RNG.nextInt(rc.readSharedArray(1));
+                    int w = rc.readSharedArray(i + 2);
+                    int x = loByte(w), y = hiByte(w);
+                    target = new MapLocation(x, y);
+                }
+                break;
+
+            /*case Wait:
                 if (target == null) {
                     Direction direction = parentArchonLocation.directionTo(currentLocation);
                     double theta = RNG.nextDouble() * Math.PI * 2 + Math.atan2(direction.dy, direction.dx);
@@ -57,9 +78,12 @@ public strictfp class Soldier extends Droid {
                 }
                 break;
 
-            case Wander:
-                if (attackTarget != null) { super.setTarget(attackTarget); }
-                if (target == null) { selectRandomTarget(); }
+            case Guard:
+                findGuardInfo();
+                if (guardInfo == null) { selectRandomTarget(); }
+                else setTarget(guardInfo.location);
+
+                if (attackTarget != null) setTarget(attackTarget);
                 break;
 
             case Scout:
@@ -81,18 +105,93 @@ public strictfp class Soldier extends Droid {
                 if (target != null) { super.setTarget(target); }
                 else { mode = Mode.Wander; }
 
-                break;
-
-            case Raid:
-                break;
+                break;*/
         }
 
-        scoutEnemyArchon();
-        if (mode == Mode.Scout && rc.canSenseLocation(target)) { enemyArchonLocationIdx++; }
+        rc.setIndicatorString("mode = " + mode + ", target = " + target);
+
+        recordEnemyArchon();
+        //if (mode == Mode.Scout && rc.canSenseLocation(target)) { enemyArchonLocationIdx++; }
 
         if (attackTarget != null && rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
 
         super.move();
+    }
+
+    private boolean isIdentifiedEnemyArchon(MapLocation loc) throws GameActionException {
+        int n = rc.readSharedArray(1);
+        for (int i = 0; i < n; ++i) {
+            int w = rc.readSharedArray(i + 2);
+            if (loByte(w) == loc.x && hiByte(w) == loc.y)
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isThereNoEnemyArchon(MapLocation loc) throws GameActionException {
+        if (!rc.canSenseRobotAtLocation(loc)) return false;
+        RobotInfo robot = rc.senseRobotAtLocation(loc);
+        return robot.getTeam() != opponent || robot.getType() != RobotType.ARCHON;
+    }
+
+    private void recordEnemyArchon() throws GameActionException {
+        int n = rc.readSharedArray(1);
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getType() == RobotType.ARCHON && robot.getTeam() == opponent) {
+                MapLocation loc = robot.location;
+                if(isIdentifiedEnemyArchon(loc)) continue;
+
+                rc.writeSharedArray(n + 2, makeWord(loc.x, loc.y));
+                rc.writeSharedArray(1, ++n);
+                System.out.println(n + "th Enemy archon is at (" + loc.x + ", " + loc.y + ")");
+            }
+        }
+    }
+
+    private void findAttackTarget() {
+        int minHealth = INF;
+        attackTarget = null;
+
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getTeam() != opponent) continue;
+
+            int distance = currentLocation.distanceSquaredTo(robot.location);
+            if(mode != Mode.Wander && distance > 13) continue;
+
+            int health = robot.getHealth();
+            //if(robot.getType() == RobotType.SOLDIER) { health -= 1000; }
+            if(robot.getType() == RobotType.ARCHON) { health -= 100000; }
+
+            if(health < minHealth) {
+                minHealth = health;
+                attackTarget = robot.location;
+            }
+        }
+    }
+
+    /*private void findGuardInfo() {
+        int minDistance = INF;
+        RobotInfo nearestInfo = null;
+        boolean lost = true;
+
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getTeam() == opponent) continue;
+            if (robot.getType() != RobotType.MINER) continue;
+            if (guardInfo != null && guardInfo.getID() == robot.getID()) {
+                guardInfo = robot;
+                lost = false;
+                break;
+            }
+
+            int distance = currentLocation.distanceSquaredTo(robot.location);
+
+            if(distance < minDistance) {
+                minDistance = distance;
+                nearestInfo = robot;
+            }
+        }
+
+        if (lost) { guardInfo = nearestInfo; }
     }
 
     private void receiveCommand() throws GameActionException {
@@ -104,7 +203,6 @@ public strictfp class Soldier extends Droid {
             if(parentArchonLocation.distanceSquaredTo(currentLocation) <= 34) {
                 mode = Mode.Wander;
                 target = null;
-                RNG.setSeed(1234);
             }
         }
         else { target = new MapLocation(x, y); }
@@ -133,49 +231,5 @@ public strictfp class Soldier extends Droid {
         }
 
         return locations;
-    }
-
-    private boolean isIdentifiedEnemyArchon(MapLocation loc) throws GameActionException {
-        int n = rc.readSharedArray(1);
-        for (int i = 0; i < n; ++i) {
-            int w = rc.readSharedArray(i + 2);
-            if (loByte(w) == loc.x && hiByte(w) == loc.y)
-                return true;
-        }
-        return false;
-    }
-
-    private void scoutEnemyArchon() throws GameActionException {
-        int n = rc.readSharedArray(1);
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.ARCHON && robot.getTeam() == opponent) {
-                MapLocation loc = robot.location;
-                if(isIdentifiedEnemyArchon(loc)) continue;
-
-                rc.writeSharedArray(n + 2, makeWord(loc.x, loc.y));
-                rc.writeSharedArray(1, ++n);
-                System.out.println(n + "th Enemy archon is at (" + loc.x + ", " + loc.y + ")");
-            }
-        }
-    }
-
-    private void findAttackTarget() {
-        int minHealth = INF;
-        attackTarget = null;
-
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() != opponent) continue;
-
-            int distance = currentLocation.distanceSquaredTo(robot.location);
-            if(mode != Mode.Wander && distance > 13) continue;
-
-            int health = robot.getHealth();
-            if(robot.getType() == RobotType.SOLDIER) { health -= 1000; }
-
-            if(health < minHealth) {
-                minHealth = health;
-                attackTarget = robot.location;
-            }
-        }
-    }
+    }*/
 }

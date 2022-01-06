@@ -5,7 +5,7 @@ import battlecode.common.*;
 public strictfp class RobotPlayer {
 
     private static Robot robot = null;
-    private static int turnCount = 0;
+    protected static int turnCount = 0;
 
     public static void run(RobotController rc) throws GameActionException {
         switch (rc.getType()) {
@@ -21,7 +21,7 @@ public strictfp class RobotPlayer {
 
         while (true) {
             turnCount += 1;
-            if(turnCount >= 800) return; // For test
+            //if(turnCount >= 2000) return; // For test
 
             try {
                 robot.step();
