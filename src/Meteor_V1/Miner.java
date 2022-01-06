@@ -72,11 +72,4 @@ public strictfp class Miner extends Droid {
 
         isScouting = (minDistance == INF);
     }
-<<<<<<< HEAD
-=======
-
-    private void selectRandomTarget() throws GameActionException {
-        setTarget(new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight())));
-    }
->>>>>>> pathing
 }
