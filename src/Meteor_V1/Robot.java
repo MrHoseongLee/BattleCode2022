@@ -60,20 +60,11 @@ public class Robot {
     }
 
     protected void move() throws GameActionException {
-        if (!rc.isMovementReady()) { return; }
-        if (target == null) { selectRandomTarget(); }
         if (nextDirection == null) { calculateNextDirection(); }
-
-        if (nextDirection == Direction.CENTER || !rc.canMove(nextDirection)) {
-            stuckTurnCount++;
-            if (stuckTurnCount >= 3) { target = null; }
-        } else {
-            stuckTurnCount = 0;
-            rc.move(nextDirection);
-        }
-
-        if (currentLocation.equals(target)) { target = null; }
+        if (rc.canMove(nextDirection)) { rc.move(nextDirection); }
         nextDirection = null;
+
+        rc.setIndicatorString("target = " + target);
     }
 
     protected MapLocation getParentArchonLocation() throws GameActionException {
@@ -114,7 +105,7 @@ public class Robot {
 
             if (distance == 0) { nextDirection = direction; break; }
 
-            double value = Math.sqrt(distance) + rc.senseRubble(nextLocation) / 10;
+            double value = Math.sqrt(distance) + rc.senseRubble(nextLocation) / 10.0;
 
             if (distance > originalDistance) { value += Math.sqrt(distance - originalDistance) * 2; }
 

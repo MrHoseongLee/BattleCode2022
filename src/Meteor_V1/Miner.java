@@ -37,7 +37,9 @@ public strictfp class Miner extends Droid {
             target = null;
         }
 
-        if (target == null || isScouting) { FindTarget(); }
+        if (target == null || isScouting) { findTarget(); }
+
+        if (target == null) { selectRandomTarget(); }
 
         super.move();
 
@@ -54,7 +56,7 @@ public strictfp class Miner extends Droid {
         rc.writeSharedArray(signalOffset + offset, rc.readSharedArray(signalOffset + offset) ^ ((1 << (16 * (offset + 1) - ID))));
     }
 
-    private void FindTarget() throws GameActionException {
+    private void findTarget() throws GameActionException {
         int minDistance = INF;
 
         MapLocation[] locations = rc.getAllLocationsWithinRadiusSquared(currentLocation, 20);
@@ -62,7 +64,8 @@ public strictfp class Miner extends Droid {
         for (MapLocation location : locations) {
             if (!rc.canSenseRobotAtLocation(location) && rc.senseGold(location) + rc.senseLead(location) > 0) {
                 isScouting = false;
-                int distance = currentLocation.distanceSquaredTo(location);
+                int r = 1 + rc.senseRubble(location) / 10;
+                int distance = currentLocation.distanceSquaredTo(location) * r;
                 if (distance < minDistance) {
                     minDistance = distance;
                     setTarget(location);
