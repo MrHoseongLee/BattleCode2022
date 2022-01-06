@@ -22,15 +22,6 @@ public strictfp class Archon extends Building {
         rc.writeSharedArray(archonIdx + 10, 100);
     }
 
-    private int getMinerCount() throws GameActionException {
-        int currentMinerSignal = rc.readSharedArray(62) << 16 + rc.readSharedArray(63);
-        int minerCount = Integer.bitCount(currentMinerSignal ^ previousMinerSignal);
-
-        previousMinerSignal = currentMinerSignal;
-
-        return minerCount;
-    }
-
     public void step() throws GameActionException {
         super.step();
 
@@ -76,13 +67,13 @@ public strictfp class Archon extends Building {
 
         if(builderCnt < 0) {
             if (buildDroid(RobotType.BUILDER)) {
-                builderCnt += 1;
+                builderCount++;
             }
         }
 
         if(soldierCnt < 1) {
             if (buildDroid(RobotType.SOLDIER)) {
-                soldierCnt += 1;
+                soldierCount++;
             }
         }*/
     }
