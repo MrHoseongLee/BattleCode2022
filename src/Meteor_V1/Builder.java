@@ -63,7 +63,7 @@ public strictfp class Builder extends Droid {
             if (rubble < minRubble || (rubble == minRubble && distance < minDistance)) {
                 minRubble = rubble;
                 minDistance = distance;
-                target = location;
+                super.setTarget(location);
             }
         }
     }
