@@ -27,6 +27,14 @@ public strictfp class Archon extends Building {
 
         rc.writeSharedArray(18, RobotPlayer.turnCount);
 
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getType() == RobotType.SOLDIER && robot.getTeam() != rc.getTeam()) {
+                buildDroid(RobotType.SOLDIER);
+                break;
+            }
+        }
+
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
 
         if (rc.isActionReady()) {

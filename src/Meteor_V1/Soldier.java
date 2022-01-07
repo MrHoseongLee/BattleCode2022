@@ -159,7 +159,7 @@ public strictfp class Soldier extends Droid {
         for (int i = 0; i < n; ++i) {
             int w = rc.readSharedArray(i + 2);
             int x = loByte(w), y = hiByte(w);
-            if (x != 100) {
+            if (x != 100 && rc.readSharedArray(18) >= 200) {
                 target = new MapLocation(x, y);
                 mode = Mode.Raid;
                 return;
