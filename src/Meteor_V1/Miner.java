@@ -18,7 +18,7 @@ public strictfp class Miner extends Droid {
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
 
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam().isPlayer()) continue;
+            if (robot.getTeam() == rc.getTeam()) continue;
             if (robot.getType() != RobotType.SOLDIER) continue;
 
             nextDirection = robot.location.directionTo(currentLocation);

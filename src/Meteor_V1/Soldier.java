@@ -165,7 +165,7 @@ public strictfp class Soldier extends Droid {
                 return;
             }
         }
-        mode = Mode.Wander;
+        //mode = Mode.Wander;
     }
 
     protected void selectRandomTarget() throws GameActionException {
