@@ -18,8 +18,6 @@ public strictfp class Soldier extends Droid {
     //private int enemyArchonLocationIdx = 0;
 
     private final Team opponent;
-    private int parentArchonIdx;
-    private final MapLocation parentArchonLocation;
     //private final MapLocation[] enemyArchonLocations;
 
     public Soldier(RobotController rc) throws GameActionException {
@@ -27,17 +25,7 @@ public strictfp class Soldier extends Droid {
         RNG.setSeed(rc.readSharedArray(18));
 
         opponent = rc.getTeam().opponent();
-        parentArchonLocation = getParentArchonLocation();
         //enemyArchonLocations = getEnemyArchonLocations();
-
-        int n = rc.readSharedArray(0);
-        for (int i = 0; i < n; ++i) {
-            int w = rc.readSharedArray(i + 6);
-            if (loByte(w) == parentArchonLocation.x && hiByte(w) == parentArchonLocation.y) {
-                parentArchonIdx = i;
-                break;
-            }
-        }
     }
 
     public void step() throws GameActionException {
@@ -47,7 +35,9 @@ public strictfp class Soldier extends Droid {
 
         //receiveCommand();
 
-        if (rc.readSharedArray(30) > 1000 && rc.readSharedArray(0) == rc.readSharedArray(1)) mode = Mode.Raid;
+        findEnemyArchonTarget();
+
+        //if (rc.readSharedArray(30) > 1000 && rc.readSharedArray(0) == rc.readSharedArray(1)) mode = Mode.Raid;
 
         findAttackTarget();
 
@@ -60,12 +50,28 @@ public strictfp class Soldier extends Droid {
                 break;
 
             case Raid:
-                if (target == null || isThereNoEnemyArchon(target)) {
+                if (target != null) {
+                    int idx = -1;
+                    int n = rc.readSharedArray(1);
+                    for (int i = 0; i < n; ++i) {
+                        int w = rc.readSharedArray(i + 2);
+                        if (loByte(w) == target.x && hiByte(w) == target.y)
+                            idx = i;
+                    }
+                    if (idx != -1 && isThereNoEnemyArchon(target))
+                        rc.writeSharedArray(idx + 2, 100);
+
+                    if (idx == -1) {
+                        target = null;
+                        mode = Mode.Wander;
+                    }
+                }
+                /*if (target == null || isThereNoEnemyArchon(target)) {
                     int i = RNG.nextInt(rc.readSharedArray(1));
                     int w = rc.readSharedArray(i + 2);
                     int x = loByte(w), y = hiByte(w);
                     target = new MapLocation(x, y);
-                }
+                }*/
                 break;
 
             /*case Wait:
@@ -110,42 +116,21 @@ public strictfp class Soldier extends Droid {
 
         rc.setIndicatorString("mode = " + mode + ", target = " + target);
 
-        recordEnemyArchon();
+        recordEnemyArchon(nearbyRobots);
         //if (mode == Mode.Scout && rc.canSenseLocation(target)) { enemyArchonLocationIdx++; }
 
-        if (attackTarget != null && rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
+        if (attackTarget != null && rc.canAttack(attackTarget)) {
+            rc.attack(attackTarget);
+            nextDirection = attackTarget.directionTo(currentLocation);
+        }
 
         super.move();
-    }
-
-    private boolean isIdentifiedEnemyArchon(MapLocation loc) throws GameActionException {
-        int n = rc.readSharedArray(1);
-        for (int i = 0; i < n; ++i) {
-            int w = rc.readSharedArray(i + 2);
-            if (loByte(w) == loc.x && hiByte(w) == loc.y)
-                return true;
-        }
-        return false;
     }
 
     private boolean isThereNoEnemyArchon(MapLocation loc) throws GameActionException {
         if (!rc.canSenseRobotAtLocation(loc)) return false;
         RobotInfo robot = rc.senseRobotAtLocation(loc);
         return robot.getTeam() != opponent || robot.getType() != RobotType.ARCHON;
-    }
-
-    private void recordEnemyArchon() throws GameActionException {
-        int n = rc.readSharedArray(1);
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.ARCHON && robot.getTeam() == opponent) {
-                MapLocation loc = robot.location;
-                if(isIdentifiedEnemyArchon(loc)) continue;
-
-                rc.writeSharedArray(n + 2, makeWord(loc.x, loc.y));
-                rc.writeSharedArray(1, ++n);
-                System.out.println(n + "th Enemy archon is at (" + loc.x + ", " + loc.y + ")");
-            }
-        }
     }
 
     private void findAttackTarget() {
@@ -167,6 +152,30 @@ public strictfp class Soldier extends Droid {
                 attackTarget = robot.location;
             }
         }
+    }
+
+    private void findEnemyArchonTarget() throws GameActionException {
+        int n = rc.readSharedArray(1);
+        for (int i = 0; i < n; ++i) {
+            int w = rc.readSharedArray(i + 2);
+            int x = loByte(w), y = hiByte(w);
+            if (x != 100) {
+                target = new MapLocation(x, y);
+                mode = Mode.Raid;
+                return;
+            }
+        }
+        mode = Mode.Wander;
+    }
+
+    protected void selectRandomTarget() throws GameActionException {
+        int t = Math.max(rc.readSharedArray(18) / 5, 5);
+        int x1 = Math.max(parentArchonLocation.x - t, 0);
+        int y1 = Math.max(parentArchonLocation.y - t, 0);
+        int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);
+        int y2 = Math.min(parentArchonLocation.y + t, rc.getMapHeight() - 1);
+        target = new MapLocation(RNG.nextInt(x2 - x1 + 1) + x1, RNG.nextInt(y2 - y1 + 1) + y1);
+        //target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
     }
 
     /*private void findGuardInfo() {

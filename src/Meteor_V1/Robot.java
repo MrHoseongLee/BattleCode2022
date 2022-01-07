@@ -64,16 +64,7 @@ public class Robot {
         if (rc.canMove(nextDirection)) { rc.move(nextDirection); }
         nextDirection = null;
 
-        rc.setIndicatorString("target = " + target);
-    }
-
-    protected MapLocation getParentArchonLocation() throws GameActionException {
-        for(Direction dir : directions) {
-            MapLocation loc = currentLocation.add(dir);
-            if(rc.canSenseRobotAtLocation(loc) && rc.senseRobotAtLocation(loc).getType() == RobotType.ARCHON)
-                return loc;
-        }
-        return null;
+        //rc.setIndicatorString("target = " + target);
     }
 
     protected void setTarget(MapLocation target) {
@@ -81,7 +72,7 @@ public class Robot {
         this.target = target;
     }
 
-    protected void selectRandomTarget() {
+    protected void selectRandomTarget() throws GameActionException {
         target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
     }
 

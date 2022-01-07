@@ -9,6 +9,7 @@ public strictfp class Archon extends Building {
     private int soldierCnt = 0;
     private int previousMinerSignal = 0;
     private int commandedScout = 0;
+    private MapLocation repairTarget = null;
 
     private final int archonIdx;
 
@@ -33,14 +34,17 @@ public strictfp class Archon extends Building {
     public void step() throws GameActionException {
         super.step();
 
-        if (archonIdx == 0) { rc.writeSharedArray(18, RobotPlayer.turnCount); }
+        rc.writeSharedArray(18, RobotPlayer.turnCount);
 
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
 
-        if (rc.isActionReady() && lead >= 75) {
-            int k = Math.min(4, RobotPlayer.turnCount / 100);
-            if (lead >= 1000 || RNG.nextInt(10) < 3 + k) buildDroid(RobotType.SOLDIER);
-            else buildDroid(RobotType.MINER);
+        if (rc.isActionReady()) {
+            if (lead >= 200 && RNG.nextInt() < 3) buildDroid(RobotType.BUILDER);
+            else if (lead >= 75) {
+                int k = Math.min(4, RobotPlayer.turnCount / 100);
+                if (lead >= 1000 || RNG.nextInt(10) < 3 + k) buildDroid(RobotType.SOLDIER);
+                else buildDroid(RobotType.MINER);
+            }
         }
 
         // Command to soldier
@@ -98,6 +102,25 @@ public strictfp class Archon extends Building {
         for (Direction direction : directions) {
             if (rc.canBuildRobot(robotType, direction)) {
                 rc.buildRobot(robotType, direction);
+            }
+        }
+    }
+
+    private void findRepairTarget() {
+        int minHealth = INF;
+        repairTarget = null;
+
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getTeam() != rc.getTeam() || robot.getType().isBuilding()) continue;
+            if (robot.getHealth() == robot.getType().getMaxHealth(1)) continue;
+            if (currentLocation.distanceSquaredTo(robot.location) > 20) continue;
+
+            int health = robot.getHealth();
+
+            if(health < minHealth) {
+                minHealth = health;
+                repairTarget = robot.location;
             }
         }
     }
