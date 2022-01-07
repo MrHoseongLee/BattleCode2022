@@ -122,9 +122,8 @@ public class Robot {
             if (rc.canSenseRobotAtLocation(neighbor) && !currentLocation.equals(neighbor)) { continue; }
             int rubble = rc.senseRubble(neighbor);
             int distance = currentLocation.distanceSquaredTo(neighbor);
-            if (rubble < minRubble || (rubble == minRubble && distance < minDistance)) { 
-                minRubble = rubble; minDistance = distance; bestNeighbor = neighbor; 
-            }
+            if (rubble < minRubble) { minRubble = rubble; minDistance = INF; bestNeighbor = neighbor; }
+            if (rubble == minRubble && distance < minDistance) { minRubble = rubble; minDistance = distance; bestNeighbor = neighbor; }
         }
         return bestNeighbor;
     }

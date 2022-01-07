@@ -31,12 +31,16 @@ public strictfp class Miner extends Droid {
         if (currentLocation.equals(target) && miningTarget != null) {
             int leadCount = rc.senseLead(miningTarget);
             while (rc.isActionReady() && leadCount > 1) { rc.mineLead(miningTarget); leadCount--; }
-        }
-        for (Direction direction : Direction.allDirections()) {
-            MapLocation loc = currentLocation.add(direction);
-            if (rc.canSenseLocation(loc) && rc.senseLead(loc) > 1) {
-                while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) { rc.mineLead(loc); }
+
+            for (Direction direction : Direction.allDirections()) {
+                MapLocation location = currentLocation.add(direction);
+                if (rc.canSenseLocation(location)) {
+                    leadCount = rc.senseLead(location);
+                    while (rc.isActionReady() && leadCount > 1) { rc.mineLead(location); leadCount--; }
+                }
             }
+
+            return;
         }
 
         super.move();
