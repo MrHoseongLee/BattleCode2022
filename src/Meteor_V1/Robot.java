@@ -16,7 +16,6 @@ public class Robot {
     int hiByte(int x) { return (x >> 8) & 0xFF; }
     int makeWord(int lo, int hi) { return lo | (hi << 8); }
 
-
     protected RobotController rc;
 
     protected MapLocation currentLocation;
@@ -38,7 +37,6 @@ public class Robot {
 
     protected MapLocation target = null;
     protected Direction nextDirection = null;
-    protected int stuckTurnCount = 0;
 
     protected static final int INF = 0x3f3f3f3f;
 
@@ -52,6 +50,12 @@ public class Robot {
         currentLocation = rc.getLocation();
     }
 
+    protected void move() throws GameActionException {
+        if (nextDirection == null) { calculateNextDirection(); }
+        if (rc.canMove(nextDirection)) { rc.move(nextDirection); }
+        // rc.setIndicatorString("target = " + target);
+    }
+
     protected void draw() throws GameActionException {
         if (target != null) {
             rc.setIndicatorDot(target, 0, 255, 0);
@@ -59,12 +63,12 @@ public class Robot {
         }
     }
 
-    protected void move() throws GameActionException {
-        if (nextDirection == null) { calculateNextDirection(); }
-        if (rc.canMove(nextDirection)) { rc.move(nextDirection); }
-        nextDirection = null;
-
-        //rc.setIndicatorString("target = " + target);
+    protected MapLocation getParentArchonLocation() throws GameActionException {
+        RobotInfo[] nearRobots = rc.senseNearbyRobots(2);
+        for (RobotInfo nearRobot : nearRobots) {
+            if (nearRobot.team.isPlayer() && nearRobot.type.equals(RobotType.ARCHON)) { return nearRobot.location; }
+        }
+        return null;
     }
 
     protected void setTarget(MapLocation target) {
@@ -108,12 +112,12 @@ public class Robot {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
 
-    protected MapLocation bestLocationNextToLocation(MapLocation location) throws GameActionException {
-        MapLocation[] neighbors = rc.getAllLocationsWithinRadiusSquared(location, 2); // TODO HARDCODE TO SAVE BYTECODE
+    protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {
+        MapLocation[] neighbors = rc.getAllLocationsWithinRadiusSquared(location, 2);
         int minRubble = INF;
-        MapLocation bestNeighbor = location;
+        MapLocation bestNeighbor = null;
         for (MapLocation neighbor : neighbors) {
-            if (rc.canSenseRobotAtLocation(location)) { continue; }
+            if (rc.canSenseRobotAtLocation(neighbor) && !currentLocation.equals(neighbor)) { continue; }
             int rubble = rc.senseRubble(neighbor);
             if (rubble < minRubble) { minRubble = rubble; bestNeighbor = neighbor; }
         }
