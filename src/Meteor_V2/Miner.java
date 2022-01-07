@@ -33,7 +33,7 @@ public strictfp class Miner extends Droid {
             while (rc.isActionReady() && leadCount > 1) { rc.mineLead(miningTarget); leadCount--; }
 
             for (Direction direction : Direction.allDirections()) {
-                MapLocation location = currentLocation.add(direction);
+                MapLocation location = rc.adjacentLocation(direction);
                 if (rc.canSenseLocation(location)) {
                     leadCount = rc.senseLead(location);
                     while (rc.isActionReady() && leadCount > 1) { rc.mineLead(location); leadCount--; }

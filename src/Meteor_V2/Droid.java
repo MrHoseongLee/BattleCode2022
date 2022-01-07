@@ -12,29 +12,28 @@ public strictfp class Droid extends Robot {
 
         parentArchonLocation = getParentArchonLocation();
         parentArchonIdx = getParentArchonIdx();
+
+        System.out.println("" + parentArchonIdx);
+        System.out.println("" + parentArchonLocation);
     }
 
     public void step() throws GameActionException {
         super.step();
     }
 
-    protected MapLocation getParentArchonLocation() throws GameActionException {
-        for(Direction dir : directions) {
-            MapLocation loc = currentLocation.add(dir);
-            if(rc.canSenseRobotAtLocation(loc) && rc.senseRobotAtLocation(loc).getType() == RobotType.ARCHON)
-                return loc;
-        }
-        return null;
-    }
+   protected void recordEnemyArchon(RobotInfo[] nearbyRobots) throws GameActionException {
+        int n = rc.readSharedArray(1);
 
-    protected int getParentArchonIdx() throws GameActionException {
-        int n = rc.readSharedArray(0);
-        for (int i = 0; i < n; ++i) {
-            int w = rc.readSharedArray(i + 6);
-            if (loByte(w) == parentArchonLocation.x && hiByte(w) == parentArchonLocation.y)
-                return i;
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getType() == RobotType.ARCHON && !isRobotOnSameTeam(robot)) {
+                int code = encode(robot.getLocation(), robot.getID());
+
+                if (rc.readSharedArray(n + 2) == code) { continue; }
+
+                rc.writeSharedArray(n + 2, code);
+                rc.writeSharedArray(1, ++n);
+            }
         }
-        return -1;
     }
 
     protected int getEnemyArchonIdx(MapLocation loc) throws GameActionException {
@@ -47,17 +46,22 @@ public strictfp class Droid extends Robot {
         return -1;
     }
 
-    protected void recordEnemyArchon(RobotInfo[] nearbyRobots) throws GameActionException {
-        int n = rc.readSharedArray(1);
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.ARCHON && robot.getTeam() != rc.getTeam()) {
-                MapLocation loc = robot.location;
-                if(getEnemyArchonIdx(loc) != -1) continue;
-
-                rc.writeSharedArray(n + 2, makeWord(loc.x, loc.y));
-                rc.writeSharedArray(1, ++n);
-                System.out.println(n + "th Enemy archon is at (" + loc.x + ", " + loc.y + ")");
-            }
+    private MapLocation getParentArchonLocation() throws GameActionException {
+        for(Direction direction : directions) {
+            MapLocation location = rc.adjacentLocation(direction);
+            if (isThereRobotTypeAt(location, RobotType.ARCHON)) { return location; }
         }
+
+        return null;
+    }
+
+    private int getParentArchonIdx() throws GameActionException {
+        int code = encode(parentArchonLocation, 0) & 4096;
+
+        for (int i = 0; i < rc.readSharedArray(0); ++i) {
+            if ((rc.readSharedArray(i + 6) & 4096) == code) { return i; }
+        }
+
+        return -1;
     }
 }

@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public strictfp class Builder extends Droid {
 
-    private enum Phase {BUILD, REPAIR }
+    private enum Phase {BUILD, REPAIR}
 
     private Phase phase = Phase.BUILD;
     private MapLocation repairTarget = null;
@@ -23,7 +23,7 @@ public strictfp class Builder extends Droid {
                 if (target != null && target.equals(currentLocation)) { target = null; }
 
                 // Change target if target is already occupied
-                if (target != null && rc.canSenseLocation(target) && isThereBuilding(target)) { target = null; }
+                if (target != null && rc.canSenseLocation(target) && isThereBuildingAt(target)) { target = null; }
 
                 if (target == null) { selectRandomTarget(); }
 
