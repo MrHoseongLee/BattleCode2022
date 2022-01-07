@@ -53,6 +53,7 @@ public class Robot {
     protected void move() throws GameActionException {
         if (nextDirection == null) { calculateNextDirection(); }
         if (rc.canMove(nextDirection)) { rc.move(nextDirection); }
+        nextDirection = null;
         // rc.setIndicatorString("target = " + target);
     }
 
