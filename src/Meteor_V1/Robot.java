@@ -116,11 +116,15 @@ public class Robot {
     protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {
         MapLocation[] neighbors = rc.getAllLocationsWithinRadiusSquared(location, 2);
         int minRubble = INF;
+        int minDistance = INF;
         MapLocation bestNeighbor = null;
         for (MapLocation neighbor : neighbors) {
             if (rc.canSenseRobotAtLocation(neighbor) && !currentLocation.equals(neighbor)) { continue; }
             int rubble = rc.senseRubble(neighbor);
-            if (rubble < minRubble) { minRubble = rubble; bestNeighbor = neighbor; }
+            int distance = currentLocation.distanceSquaredTo(neighbor);
+            if (rubble < minRubble || (rubble == minRubble && distance < minDistance)) { 
+                minRubble = rubble; minDistance = distance; bestNeighbor = neighbor; 
+            }
         }
         return bestNeighbor;
     }

@@ -16,10 +16,9 @@ public strictfp class Miner extends Droid {
         updateTarget();
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
-        Team opponent = rc.getTeam().opponent();
 
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() != opponent) continue;
+            if (robot.getTeam().isPlayer()) continue;
             if (robot.getType() != RobotType.SOLDIER) continue;
 
             nextDirection = robot.location.directionTo(currentLocation);
@@ -58,7 +57,7 @@ public strictfp class Miner extends Droid {
         if (currentLocation.equals(target) && miningTarget == null) {
             super.setTarget(null);
         }
- 
+
         int maxValue = (miningTarget == null) ? -INF : -currentLocation.distanceSquaredTo(miningTarget);
         MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(20);
 
