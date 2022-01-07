@@ -56,7 +56,7 @@ public strictfp class Archon extends Building {
             }
         }*/
         if (rc.isActionReady()) {
-            if (lead >= 200 && RNG.nextInt() < 3) buildDroid(RobotType.BUILDER);
+            if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
                 if (lead >= 100 || rc.readSharedArray(20) == archonIdx) {
                     int k = Math.min(4, RobotPlayer.turnCount / 100);

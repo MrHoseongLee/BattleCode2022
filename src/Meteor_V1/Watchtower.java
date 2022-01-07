@@ -5,6 +5,7 @@ import battlecode.common.*;
 public strictfp class Watchtower extends Building {
 
     private MapLocation attackTarget = null;
+    private boolean dead = false;
 
     public Watchtower(RobotController rc) throws GameActionException {
         super(rc);
@@ -16,6 +17,11 @@ public strictfp class Watchtower extends Building {
         findAttackTarget();
 
         if (attackTarget != null && rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
+
+        if (!dead && rc.getHealth() <= 30) {
+            rc.writeSharedArray(19, rc.readSharedArray(19) - 1);
+            dead = true;
+        }
     }
 
     private void findAttackTarget() {

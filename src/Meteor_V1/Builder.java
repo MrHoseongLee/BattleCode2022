@@ -83,7 +83,7 @@ public strictfp class Builder extends Droid {
     }
 
     protected void selectRandomTarget() throws GameActionException {
-        int t = Math.max((int)(Math.sqrt(rc.readSharedArray(19)) * 2.4), 5);
+        int t = Math.max((int)(Math.sqrt(rc.readSharedArray(19)) * 2), 5);
         int x1 = Math.max(parentArchonLocation.x - t, 0);
         int y1 = Math.max(parentArchonLocation.y - t, 0);
         int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);
