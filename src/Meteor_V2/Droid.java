@@ -37,14 +37,14 @@ public strictfp class Droid extends Robot {
         return -1;
     }
 
-    protected boolean isIdentifiedEnemyArchon(MapLocation loc) throws GameActionException {
+    protected int getEnemyArchonIdx(MapLocation loc) throws GameActionException {
         int n = rc.readSharedArray(1);
         for (int i = 0; i < n; ++i) {
             int w = rc.readSharedArray(i + 2);
             if (loByte(w) == loc.x && hiByte(w) == loc.y)
-                return true;
+                return i;
         }
-        return false;
+        return -1;
     }
 
     protected void recordEnemyArchon(RobotInfo[] nearbyRobots) throws GameActionException {
@@ -52,7 +52,7 @@ public strictfp class Droid extends Robot {
         for (RobotInfo robot : nearbyRobots) {
             if (robot.getType() == RobotType.ARCHON && robot.getTeam() != rc.getTeam()) {
                 MapLocation loc = robot.location;
-                if(isIdentifiedEnemyArchon(loc)) continue;
+                if(getEnemyArchonIdx(loc) != -1) continue;
 
                 rc.writeSharedArray(n + 2, makeWord(loc.x, loc.y));
                 rc.writeSharedArray(1, ++n);
