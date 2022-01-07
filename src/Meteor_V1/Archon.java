@@ -10,6 +10,7 @@ public strictfp class Archon extends Building {
     private int previousMinerSignal = 0;
     private int commandedScout = 0;
     private MapLocation repairTarget = null;
+    private RobotType buildType = null;
 
     private final int archonIdx;
 
@@ -37,12 +38,33 @@ public strictfp class Archon extends Building {
 
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
 
+        /*if (rc.isActionReady() && buildType == null) {
+            if (lead >= 200 && RNG.nextInt() < 3) buildType = RobotType.BUILDER;
+            else {
+                int k = Math.min(4, RobotPlayer.turnCount / 100);
+                if (lead >= 1000 || RNG.nextInt(10) < 3 + k) buildType = RobotType.SOLDIER;
+                else buildType = RobotType.MINER;
+            }
+        }
+
+        if (buildType != null && lead >= buildType.buildCostLead) {
+            if (lead >= buildType.buildCostLead * 2 || rc.readSharedArray(20) == archonIdx) {
+                buildDroid(buildType);
+                buildType = null;
+                int n = rc.readSharedArray(0);
+                rc.writeSharedArray(20, (archonIdx + 1) % n);
+            }
+        }*/
         if (rc.isActionReady()) {
             if (lead >= 200 && RNG.nextInt() < 3) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
-                int k = Math.min(4, RobotPlayer.turnCount / 100);
-                if (lead >= 1000 || RNG.nextInt(10) < 3 + k) buildDroid(RobotType.SOLDIER);
-                else buildDroid(RobotType.MINER);
+                if (lead >= 100 || rc.readSharedArray(20) == archonIdx) {
+                    int k = Math.min(4, RobotPlayer.turnCount / 100);
+                    if (lead >= 1000 || RNG.nextInt(10) < 4 + k) buildDroid(RobotType.SOLDIER);
+                    else buildDroid(RobotType.MINER);
+                    int n = rc.readSharedArray(0);
+                    rc.writeSharedArray(20, (archonIdx + 1) % n);
+                }
             }
         }
 
