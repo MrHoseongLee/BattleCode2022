@@ -12,9 +12,6 @@ public strictfp class Droid extends Robot {
 
         parentArchonLocation = getParentArchonLocation();
         parentArchonIdx = getParentArchonIdx();
-
-        System.out.println("" + parentArchonIdx);
-        System.out.println("" + parentArchonLocation);
     }
 
     public void step() throws GameActionException {
@@ -42,10 +39,10 @@ public strictfp class Droid extends Robot {
     }
 
     protected int getEnemyArchonIdx(MapLocation location) throws GameActionException {
-        int code = encode(location, 0) & 4096;
+        int code = encode(location, 0) & 4095;
 
         for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
-            if ((rc.readSharedArray(i + 2) & 4096) == code) { return i; }
+            if ((rc.readSharedArray(i + 2) & 4095) == code) { return i; }
         }
 
         return -1;
@@ -71,10 +68,10 @@ public strictfp class Droid extends Robot {
     }
 
     private int getParentArchonIdx() throws GameActionException {
-        int code = encode(parentArchonLocation, 0) & 4096;
+        int code = encode(parentArchonLocation, 0) & 4095;
 
         for (int i = 0; i < rc.readSharedArray(Idx.teamArchonCount); ++i) {
-            if ((rc.readSharedArray(i + 6) & 4096) == code) { return i; }
+            if ((rc.readSharedArray(i + 6) & 4095) == code) { return i; }
         }
 
         return -1;

@@ -2,8 +2,6 @@ package Meteor_V2;
 
 import battlecode.common.*;
 
-import java.util.Collections;
-
 public strictfp class Soldier extends Droid {
 
     private enum Mode {
@@ -17,7 +15,6 @@ public strictfp class Soldier extends Droid {
 
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        RNG.setSeed(rc.readSharedArray(18));
     }
 
     public void step() throws GameActionException {
@@ -51,7 +48,7 @@ public strictfp class Soldier extends Droid {
 
                     // Target is destroyed
                     if (idx != -1 && isThereNoEnemyArchon(target)) {
-                        rc.writeSharedArray(idx + 2, 100);
+                        rc.writeSharedArray(idx + 2, 63);
                         idx = -1;
                     }
 
@@ -100,12 +97,11 @@ public strictfp class Soldier extends Droid {
     }
 
     private boolean updateTargetForRaid() throws GameActionException {
-        int n = rc.readSharedArray(1);
+        int n = rc.readSharedArray(Idx.enemyArchonCount);
         for (int i = 0; i < n; ++i) {
-            int w = rc.readSharedArray(i + 2);
-            int x = loByte(w), y = hiByte(w);
-            if (x != 100 && rc.readSharedArray(18) >= 200) {
-                target = new MapLocation(x, y);
+            MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + 2));
+            if (targetCandidate.x != 63 && rc.getRoundNum() >= 200) {
+                target = targetCandidate;
                 return true;
             }
         }
@@ -113,7 +109,7 @@ public strictfp class Soldier extends Droid {
     }
 
     protected void selectRandomTarget() throws GameActionException {
-        int t = Math.max(rc.readSharedArray(18) / 5, 5);
+        int t = Math.max(rc.getRoundNum() / 5, 5);
         int x1 = Math.max(parentArchonLocation.x - t, 0);
         int y1 = Math.max(parentArchonLocation.y - t, 0);
         int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);

@@ -21,8 +21,8 @@ public strictfp class Archon extends Building {
 
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1); // Increment Archon count
         rc.writeSharedArray(archonIdx + 6, encode(currentLocation, rc.getID()));
-        rc.writeSharedArray(archonIdx + 2, -1);
-        rc.writeSharedArray(archonIdx + 10, 100);
+        rc.writeSharedArray(archonIdx + 2, 0xFFFF);
+        rc.writeSharedArray(archonIdx + 10, 63);
     }
 
     public void step() throws GameActionException {

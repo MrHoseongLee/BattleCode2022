@@ -16,7 +16,12 @@ public strictfp class Builder extends Droid {
 
         // Repair if possible
         updateRepairTarget();
-        if (repairTarget != null && rc.canRepair(repairTarget)) { rc.repair(repairTarget); return; }
+        if (repairTarget != null && rc.canRepair(repairTarget)) {
+            rc.repair(repairTarget); 
+            buildTarget = null;
+            target = null;
+            return; 
+        }
 
         // Change target if target is already occupied
         if (buildTarget != null && rc.canSenseLocation(buildTarget) && isThereBuildingAt(buildTarget)) { 
@@ -35,7 +40,7 @@ public strictfp class Builder extends Droid {
             if (rc.canBuildRobot(RobotType.WATCHTOWER, direction)) {
                 rc.buildRobot(RobotType.WATCHTOWER, direction);
                 rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) + 1);
-                target = null;
+                target = null; buildTarget = null;
                 repairTarget = rc.adjacentLocation(direction);
             }
 
@@ -46,7 +51,7 @@ public strictfp class Builder extends Droid {
     }
 
     protected void selectRandomTarget() throws GameActionException {
-        int t = Math.max((int)(Math.sqrt(rc.readSharedArray(19)) * 2), 5);
+        int t = Math.max((int)(Math.sqrt(rc.readSharedArray(Idx.watchTowerCount)) * 2), 5);
         int x1 = Math.max(parentArchonLocation.x - t, 0);
         int y1 = Math.max(parentArchonLocation.y - t, 0);
         int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);
@@ -59,6 +64,7 @@ public strictfp class Builder extends Droid {
             y = RNG.nextInt(y2 - y1 + 1) + y1;
         } while (y % 2 != parentArchonLocation.y % 2);
         buildTarget = new MapLocation(x, y);
+        target = buildTarget;
     }
 
     protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {
@@ -67,8 +73,8 @@ public strictfp class Builder extends Droid {
         int minRubble = INF;
         int minDistance = INF;
 
-        for (Direction diection : directions) {
-            MapLocation neighbor = rc.adjacentLocation(diection);
+        for (Direction direction : directions) {
+            MapLocation neighbor = location.add(direction);
             if (!rc.onTheMap(neighbor)) { continue; }
             if (rc.canSenseRobotAtLocation(neighbor) && !currentLocation.equals(neighbor)) { continue; }
 

@@ -8,8 +8,8 @@ import java.util.Random;
 public class Robot {
 
     int encode (MapLocation location, int ID) { return location.x | (location.y << 6) | (ID << 12); }
-    int decodeID (int code) { return (code >> 12) & 8; }
-    MapLocation decodeLocation (int code) { return new MapLocation(code & 64, (code >> 6) & 64); }
+    int decodeID (int code) { return (code >> 12) & 15; }
+    MapLocation decodeLocation (int code) { return new MapLocation(code & 63, (code >> 6) & 63); }
 
     protected RobotController rc;
 
@@ -38,7 +38,7 @@ public class Robot {
     public Robot(RobotController rc) throws GameActionException {
         this.rc = rc;
         this.currentLocation = rc.getLocation();
-        RNG.setSeed(rc.getRoundNum() + rc.getID());
+        RNG.setSeed(rc.getRoundNum());
     }
 
     public void step() throws GameActionException {
