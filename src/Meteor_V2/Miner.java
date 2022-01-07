@@ -48,7 +48,7 @@ public strictfp class Miner extends Droid {
     }
 
     protected void setTarget(MapLocation target) {
-        super.setTarget(target);
+        this.target = target;
         miningTarget = target;
     }
 
@@ -59,7 +59,7 @@ public strictfp class Miner extends Droid {
         }
 
         if (currentLocation.equals(target) && miningTarget == null) {
-            super.setTarget(null);
+            target = null;
         }
 
         int maxValue = (miningTarget == null) ? -INF : -currentLocation.distanceSquaredTo(miningTarget);
@@ -75,7 +75,7 @@ public strictfp class Miner extends Droid {
         }
 
         if (miningTarget != null && currentLocation.distanceSquaredTo(miningTarget) < 22 - 4 * Math.sqrt(10)) {
-            super.setTarget(bestLocationNextTo(miningTarget)); 
+            target = bestLocationNextTo(miningTarget);
         }
 
         if (target == null) {
