@@ -8,7 +8,6 @@ public strictfp class Miner extends Droid {
 
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
-        RNG.setSeed(rc.readSharedArray(18));
     }
 
     public void step() throws GameActionException {

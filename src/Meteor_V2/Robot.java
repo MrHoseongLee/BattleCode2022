@@ -38,6 +38,7 @@ public class Robot {
     public Robot(RobotController rc) throws GameActionException {
         this.rc = rc;
         this.currentLocation = rc.getLocation();
+        RNG.setSeed(rc.getRoundNum() + rc.getID());
     }
 
     public void step() throws GameActionException {

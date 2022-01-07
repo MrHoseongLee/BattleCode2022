@@ -19,7 +19,7 @@ public strictfp class Watchtower extends Building {
         if (attackTarget != null && rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
 
         if (!dead && rc.getHealth() <= 30) {
-            rc.writeSharedArray(19, rc.readSharedArray(19) - 1);
+            rc.writeSharedArray(19, rc.readSharedArray(Idx.watchTowerCount) - 1);
             dead = true;
         }
     }

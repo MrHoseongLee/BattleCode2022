@@ -17,16 +17,16 @@ public strictfp class Archon extends Building {
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
 
-        archonIdx = rc.readSharedArray(0);
-        rc.writeSharedArray(0, archonIdx + 1); // Increment Archon count
-        rc.writeSharedArray(archonIdx + 6, makeWord(currentLocation.x, currentLocation.y));
+        archonIdx = rc.readSharedArray(Idx.teamArchonCount);
+
+        rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1); // Increment Archon count
+        rc.writeSharedArray(archonIdx + 6, encode(currentLocation, rc.getID()));
+        rc.writeSharedArray(archonIdx + 2, -1);
         rc.writeSharedArray(archonIdx + 10, 100);
     }
 
     public void step() throws GameActionException {
         super.step();
-
-        rc.writeSharedArray(18, RobotPlayer.turnCount);
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
         for (RobotInfo robot : nearbyRobots) {
@@ -58,12 +58,12 @@ public strictfp class Archon extends Building {
         if (rc.isActionReady()) {
             if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
-                if (lead >= 100 || rc.readSharedArray(20) == archonIdx) {
+                if (lead >= 100 || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
                     int k = Math.min(4, RobotPlayer.turnCount / 100);
                     if (lead >= 1000 || RNG.nextInt(10) < 4 + k) buildDroid(RobotType.SOLDIER);
                     else buildDroid(RobotType.MINER);
-                    int n = rc.readSharedArray(0);
-                    rc.writeSharedArray(20, (archonIdx + 1) % n);
+                    int n = rc.readSharedArray(Idx.teamArchonCount);
+                    rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
                 }
             }
         }
@@ -117,14 +117,6 @@ public strictfp class Archon extends Building {
             }
         }
         return false;
-    }
-
-    private void buildDroids(RobotType robotType) throws GameActionException {
-        for (Direction direction : directions) {
-            if (rc.canBuildRobot(robotType, direction)) {
-                rc.buildRobot(robotType, direction);
-            }
-        }
     }
 
     private void findRepairTarget() {

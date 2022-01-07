@@ -22,27 +22,42 @@ public strictfp class Droid extends Robot {
     }
 
    protected void recordEnemyArchon(RobotInfo[] nearbyRobots) throws GameActionException {
-        int n = rc.readSharedArray(1);
+        int n = rc.readSharedArray(Idx.enemyArchonCount);
 
         for (RobotInfo robot : nearbyRobots) {
             if (robot.getType() == RobotType.ARCHON && !isRobotOnSameTeam(robot)) {
-                int code = encode(robot.getLocation(), robot.getID());
+                int robotIdx = getEnemyArchonIdx(robot.getID());
 
-                if (rc.readSharedArray(n + 2) == code) { continue; }
-
-                rc.writeSharedArray(n + 2, code);
-                rc.writeSharedArray(1, ++n);
+                if (robotIdx == -1) {
+                    rc.writeSharedArray(n + 2, encode(robot.getLocation(), robot.getID()));
+                    n += 1;
+                } else {
+                    if (decodeLocation(rc.readSharedArray(robotIdx + 2)) != robot.getLocation()) { 
+                        rc.writeSharedArray(robotIdx + 2, encode(robot.getLocation(), robot.getID()));
+                    }
+                }
             }
         }
+        if (n != rc.readSharedArray(1)) { rc.writeSharedArray(1, n); }
     }
 
-    protected int getEnemyArchonIdx(MapLocation loc) throws GameActionException {
-        int n = rc.readSharedArray(1);
-        for (int i = 0; i < n; ++i) {
-            int w = rc.readSharedArray(i + 2);
-            if (loByte(w) == loc.x && hiByte(w) == loc.y)
-                return i;
+    protected int getEnemyArchonIdx(MapLocation location) throws GameActionException {
+        int code = encode(location, 0) & 4096;
+
+        for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
+            if ((rc.readSharedArray(i + 2) & 4096) == code) { return i; }
         }
+
+        return -1;
+    }
+
+    protected int getEnemyArchonIdx(int ID) throws GameActionException {
+        int code = ID >> 12;
+
+        for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
+            if (((rc.readSharedArray(i + 2) << 12) & 8) == code) { return i; }
+        }
+
         return -1;
     }
 
@@ -58,7 +73,7 @@ public strictfp class Droid extends Robot {
     private int getParentArchonIdx() throws GameActionException {
         int code = encode(parentArchonLocation, 0) & 4096;
 
-        for (int i = 0; i < rc.readSharedArray(0); ++i) {
+        for (int i = 0; i < rc.readSharedArray(Idx.teamArchonCount); ++i) {
             if ((rc.readSharedArray(i + 6) & 4096) == code) { return i; }
         }
 
