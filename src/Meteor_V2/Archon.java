@@ -4,6 +4,7 @@ import battlecode.common.*;
 
 public strictfp class Archon extends Building {
 
+    private int minerCnt = 0;
     private int soldierCnt = 0;
     private int commandedScout = 0;
 
@@ -27,12 +28,6 @@ public strictfp class Archon extends Building {
         super.step();
 
         if (rc.getRoundNum() == 2 && archonIdx == 0) { calculatePossibleEnemyArchonLocations(); }
-
-        if (rc.getRoundNum() >= 2 && archonIdx == 0) {
-            int n = rc.readSharedArray(Idx.teamArchonCount);
-            for (int i = 0; i < n * 3; ++i)
-                rc.setIndicatorDot(decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset)), 255, 0, 0);
-        }
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
         for (RobotInfo robot : nearbyRobots) {
@@ -61,7 +56,27 @@ public strictfp class Archon extends Building {
                 rc.writeSharedArray(20, (archonIdx + 1) % n);
             }
         }*/
+
         if (rc.isActionReady()) {
+            int n = rc.readSharedArray(0);
+            if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (180 * n)) {
+                if (lead >= 200 || (lead >= 50 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
+                    buildDroid(RobotType.MINER);
+                    minerCnt += 1;
+                    rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
+                }
+            }
+            else if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
+            else if (lead >= 75) {
+                if (lead >= 100 || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
+                    int k = Math.min(3, RobotPlayer.turnCount / 100);
+                    if (lead >= 1000 || RNG.nextInt(10) < 5 + k) buildDroid(RobotType.SOLDIER);
+                    else buildDroid(RobotType.MINER);
+                    rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
+                }
+            }
+        }
+        /*if (rc.isActionReady()) {
             if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
                 if (lead >= 100 || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
@@ -72,7 +87,7 @@ public strictfp class Archon extends Building {
                     rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
                 }
             }
-        }
+        }*/
 
         // Command to soldier
         /*if (commandedScout == 1) {

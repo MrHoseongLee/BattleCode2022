@@ -4,75 +4,25 @@ import battlecode.common.*;
 
 public strictfp class Miner extends Droid {
 
-    private enum Mode { 
-        Scout, // Scout for more resources
-        Drill, // Mine every block around and don't move
-        Evade, // Try to evade enemy soldier/watch tower
-    };
-
-    private Mode previousMode = Mode.Scout;
-    private Mode currentMode = Mode.Scout;
-
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     public void step() throws GameActionException {
         super.step();
+        updateTarget();
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
 
-        currentMode = previousMode;
-
         for (RobotInfo robot : nearbyRobots) {
-            if (isRobotOnSameTeam(robot)) continue;
-            if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.WATCHTOWER) { 
-                previousMode = currentMode;
-                currentMode = Mode.Evade; 
-                break; 
+            if (robot.getType() == RobotType.SOLDIER && robot.getTeam() != rc.getTeam()) {
+                nextDirection = robot.location.directionTo(currentLocation);
+                break;
             }
         }
 
         checkEnemyArchon();
 
-        switch (currentMode) {
-            case Scout:
-                updateScoutTarget();
-                break;
-
-            case Drill:
-                updateDrillTarget();
-                break;
-
-            case Evade:
-                int maxValue = -INF; nextDirection = Direction.CENTER;
-
-                for (Direction direction : directions) {
-
-                    if (!rc.canMove(direction)) { continue; }
-
-                    MapLocation location = rc.adjacentLocation(direction); int value = -rc.senseRubble(location);
-
-                    for (RobotInfo robot : nearbyRobots) {
-                        if (isRobotOnSameTeam(robot)) continue;
-                        if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.WATCHTOWER) { 
-                            value += 10 * Math.sqrt(robot.getLocation().distanceSquaredTo(location));
-                        }
-                    }
-
-                    if (value > maxValue) { maxValue = value; nextDirection = direction; }
-
-                }
-
-                break;
-        }
-
-        super.move();
-        mineLead();
-        super.draw();
-    }
-
-    private void mineLead() throws GameActionException {
         for (Direction direction : Direction.allDirections()) {
             MapLocation location = rc.adjacentLocation(direction);
             if (rc.canSenseLocation(location)) {
@@ -80,49 +30,50 @@ public strictfp class Miner extends Droid {
                 while (rc.isActionReady() && leadCount > 1) { rc.mineLead(location); leadCount--; }
             }
         }
+
+        super.move();
+
+        super.draw();
     }
 
-    private void updateScoutTarget() throws GameActionException {
-        int maxValue = -INF; target = null;
-        MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(20);
+    private void updateTarget() throws GameActionException {
+        if (currentLocation.equals(target)) {
+            if(rc.senseNearbyLocationsWithLead(2).length >= 4) return;
+            else target = null;
+        } else if (target != null && rc.canSenseRobotAtLocation(target)) target = null;
+
+        int maxValue = 0;
+        if (target != null && currentLocation.distanceSquaredTo(target) <= 10) maxValue = getValue(target);
+        MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(10);
 
         // Loop through all lead locations and find the closest one
         for (MapLocation location : leadLocations) {
-            if (rc.senseLead(location) <= 1) { continue; }
-            int value = -currentLocation.distanceSquaredTo(location);
-            if (value > maxValue) { maxValue = value; setTarget(location); }
+            if (Clock.getBytecodesLeft() < 3000) break;
+            int value = getValue(location);
+            if (value > maxValue) { maxValue = value; target = location; }
         }
 
-        if (target != null && canSense3by3At(target)) { target = bestLocationNextTo(target); }
-
-        if (target == null) { selectRandomTarget(); }
+        if (target == null) {
+            if (!updateTargetForRaid()) selectRandomTarget();
+        }
     }
 
-    private void updateDrillTarget() throws GameActionException {
-        int x = currentLocation.x; int y = currentLocation.y;
+    private int getValue(MapLocation location) throws GameActionException {
+        int leadCount = 0;
+        for (Direction direction : Direction.allDirections()) {
+            MapLocation adjacentLocation = location.add(direction);
+            if (rc.canSenseLocation(adjacentLocation)) {
+                leadCount += rc.senseLead(adjacentLocation);
 
-        if (x % 3 == 1 && y % 3 == 1 && accessibleLeadCountAt(currentLocation) > 3) { setTarget(currentLocation); return; }
-
-        int minDistance = INF; target = null;
-
-        for (MapLocation location : rc.getAllLocationsWithinRadiusSquared(currentLocation, 10)) {
-            if (rc.canSenseRobotAtLocation(location)) { continue; }
-            if (location.x % 3 != 1 || location.y % 3 != 1) { continue; }
-            if (accessibleLeadCountAt(location) > 3) {
-                int distance = currentLocation.distanceSquaredTo(location);
-                if (minDistance > distance) { minDistance = distance; setTarget(location); }
+                if (rc.canSenseRobotAtLocation(adjacentLocation)) {
+                    RobotInfo robot = rc.senseRobotAtLocation(adjacentLocation);
+                    if (robot.getID() != rc.getID() && robot.getType() == RobotType.MINER && robot.getTeam() == rc.getTeam())
+                        leadCount -= 10000;
+                }
             }
         }
-
-        if (target == null) { selectRandomTarget(); }
-    }
-
-    private int accessibleLeadCountAt(MapLocation location) throws GameActionException {
-        int count = 0;
-        for (Direction direction : Direction.allDirections()) {
-            MapLocation newLocation = location.add(direction);
-            if (rc.onTheMap(newLocation) && rc.senseLead(newLocation) > 0) { count += 1; }
-        }
-        return count;
+        if (leadCount < 4) return -INF;
+        int r = 1 + rc.senseRubble(location) / 10;
+        return leadCount / r;
     }
 }

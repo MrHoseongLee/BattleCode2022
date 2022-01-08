@@ -69,10 +69,6 @@ public class Robot {
         target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
     }
 
-    protected boolean canSense3by3At(MapLocation location) {
-        return currentLocation.distanceSquaredTo(location) <= 10;
-    }
-
     protected boolean isThereBuildingAt(MapLocation location) throws GameActionException {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
@@ -129,9 +125,21 @@ public class Robot {
             double value = Math.sqrt(distance) + (double)rc.senseRubble(nextLocation) / 10.0;
 
             // If moving in this diection increases distance, add aditional penatly
-            if (distance > originalDistance) { value += Math.sqrt(distance - originalDistance) * 2; }
+            if (distance > originalDistance) { value += 100000; }//Math.sqrt(distance - originalDistance) * 2; }
 
             if (value < bestValue) { bestValue = value; nextDirection = direction; }
         }
+    }
+
+    protected boolean updateTargetForRaid() throws GameActionException {
+        int n = rc.readSharedArray(Idx.enemyArchonCount);
+        for (int i = 0; i < n; ++i) {
+            MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
+            if (targetCandidate.x != 63) {
+                target = targetCandidate;
+                return true;
+            }
+        }
+        return false;
     }
 }
