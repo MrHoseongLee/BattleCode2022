@@ -24,7 +24,7 @@ public strictfp class Miner extends Droid {
             break;
         }
 
-        recordEnemyArchon(nearbyRobots);
+        checkEnemyArchon();
 
         // Mine only lead for now
         if (currentLocation.equals(target) && miningTarget != null) {

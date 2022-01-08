@@ -9,4 +9,5 @@ public abstract class Idx {
     static final int teamMinerCountOffset = 14;
     static final int watchTowerCount = 18;
     static final int nextArchonToBuild = 19;
+    static final int enemyArchonLocationOffset = 20;
 }

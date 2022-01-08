@@ -2,8 +2,6 @@ package Meteor_V2;
 
 import battlecode.common.*;
 
-import java.util.HashSet;
-
 public strictfp class Archon extends Building {
 
     private int soldierCnt = 0;
@@ -21,7 +19,7 @@ public strictfp class Archon extends Building {
 
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1); // Increment Archon count
         rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
-        rc.writeSharedArray(archonIdx + Idx.enemyArchonDataOffset, 0xFFFF);
+        //rc.writeSharedArray(archonIdx + Idx.enemyArchonDataOffset, 0xFFFF);
         rc.writeSharedArray(archonIdx + Idx.teamSoldierTargetOffset, 63);
     }
 
@@ -29,6 +27,12 @@ public strictfp class Archon extends Building {
         super.step();
 
         if (rc.getRoundNum() == 2 && archonIdx == 0) { calculatePossibleEnemyArchonLocations(); }
+
+        if (rc.getRoundNum() >= 2 && archonIdx == 0) {
+            int n = rc.readSharedArray(Idx.teamArchonCount);
+            for (int i = 0; i < n * 3; ++i)
+                rc.setIndicatorDot(decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset)), 255, 0, 0);
+        }
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
         for (RobotInfo robot : nearbyRobots) {
@@ -107,25 +111,26 @@ public strictfp class Archon extends Building {
     }
 
     private void calculatePossibleEnemyArchonLocations() throws GameActionException {
-        int width = rc.getMapWidth()- 1; int height = rc.getMapHeight() - 1;
-        HashSet<MapLocation> possibleLocations = new HashSet<MapLocation>();
-        MapLocation[] teamArchonLocations = new MapLocation[rc.readSharedArray(Idx.teamArchonCount)];
+        int width = rc.getMapWidth() - 1; int height = rc.getMapHeight() - 1;
+        int n = rc.readSharedArray(Idx.teamArchonCount);
 
-        for (int i = 0; i < rc.readSharedArray(Idx.teamArchonCount); ++i) {
-            MapLocation teamArchonLocation = decodeLocation(rc.readSharedArray(i + 6));
-            teamArchonLocations[i] = teamArchonLocation;
-            int x = teamArchonLocation.x; int y = teamArchonLocation.y;
+        for (int i = 0; i < n; ++i) {
+            MapLocation teamArchonLocation = decodeLocation(rc.readSharedArray(i + Idx.teamArchonDataOffset));
+            int x = teamArchonLocation.x, y = teamArchonLocation.y;
 
-            possibleLocations.add(new MapLocation(width - x, y));
-            possibleLocations.add(new MapLocation(x, height - y));
-            possibleLocations.add(new MapLocation(width - x, height - y));
+            rc.writeSharedArray(i * 3 + Idx.enemyArchonLocationOffset, encode(width - x, y));
+            rc.writeSharedArray(i * 3 + 1 + Idx.enemyArchonLocationOffset, encode(x, height - y));
+            rc.writeSharedArray(i * 3 + 2 + Idx.enemyArchonLocationOffset, encode(width - x, height - y));
         }
 
-        for (MapLocation teamArchonLocation : teamArchonLocations) {
-            possibleLocations.remove(teamArchonLocation);
+        for (int i = 0; i < n * 3; ++i) {
+            for(int j = 0; j < i; ++j) {
+                if (decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset)).equals(decodeLocation(rc.readSharedArray(j + Idx.enemyArchonLocationOffset)))) {
+                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(61, 0));
+                    break;
+                }
+            }
         }
-
-        possibleEnemyArchonLocations = possibleLocations.toArray(new MapLocation[0]);
     }
 
     private void findRepairTarget() {

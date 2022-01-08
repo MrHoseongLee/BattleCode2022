@@ -6,10 +6,11 @@ public strictfp class Soldier extends Droid {
 
     private enum Mode {
         Wander,     // Attack nearby enemy. If not found, select random target.
+        Scout,      // Move to the closest undiscovered enemy archon location.
         Raid,       // Move to and attack specific enemy archon.
     }
 
-    private Mode mode = Mode.Wander;
+    private Mode mode = Mode.Scout;
     private RobotInfo[] nearbyRobots;
     private MapLocation attackTarget = null;
 
@@ -28,8 +29,8 @@ public strictfp class Soldier extends Droid {
         // Always attack nearby enemy
         updateAttackTarget();
 
-        // Record enemy archon in vision
-        recordEnemyArchon(nearbyRobots);
+        // Check enemy archon in vision
+        checkEnemyArchon();
 
         switch (mode) {
             case Wander:
@@ -40,6 +41,12 @@ public strictfp class Soldier extends Droid {
 
                 if (target == null) { selectRandomTarget(); }
 
+                break;
+
+            case Scout:
+                if (target != null && rc.canSenseLocation(target)) { target = null; }
+                if (target == null) { target = getClosestUndiscoveredEnemyArchon(); }
+                if (target == null) { mode = Mode.Wander; return; }
                 break;
 
             case Raid:
@@ -54,7 +61,7 @@ public strictfp class Soldier extends Droid {
 
                     if (idx == -1) {
                         target = null;
-                        mode = Mode.Wander;
+                        mode = Mode.Scout;
                     }
                 }
                 break;
@@ -62,7 +69,13 @@ public strictfp class Soldier extends Droid {
 
         if (attackTarget != null && rc.canAttack(attackTarget)) {
             rc.attack(attackTarget);
-            nextDirection = attackTarget.directionTo(currentLocation);
+            if (mode != Mode.Scout) {
+                nextDirection = attackTarget.directionTo(currentLocation);
+                if (rc.canSenseLocation(currentLocation.add(nextDirection))) {
+                    int r = rc.senseRubble(currentLocation.add(nextDirection)) / 10;
+                    if (r >= rc.senseRubble(currentLocation) / 10 + 2) nextDirection = Direction.CENTER;
+                }
+            }
         }
 
         super.move();
@@ -100,7 +113,7 @@ public strictfp class Soldier extends Droid {
         int n = rc.readSharedArray(Idx.enemyArchonCount);
         for (int i = 0; i < n; ++i) {
             MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
-            if (targetCandidate.x != 63 && rc.getRoundNum() >= 200) {
+            if (targetCandidate.x != 63) {
                 target = targetCandidate;
                 return true;
             }

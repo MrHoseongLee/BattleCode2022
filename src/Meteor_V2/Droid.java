@@ -18,24 +18,45 @@ public strictfp class Droid extends Robot {
         super.step();
     }
 
-   protected void recordEnemyArchon(RobotInfo[] nearbyRobots) throws GameActionException {
-        int n = rc.readSharedArray(Idx.enemyArchonCount);
+   protected void checkEnemyArchon() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
 
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.ARCHON && !isRobotOnSameTeam(robot)) {
-                int robotIdx = getEnemyArchonIdx(robot.getID());
+        for (int i = 0; i < n * 3; ++i) {
+            MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset));
+            if (location.x >= 60) continue;
+            if (!rc.canSenseLocation(location)) continue;
 
-                if (robotIdx == -1) {
-                    rc.writeSharedArray(n + Idx.enemyArchonDataOffset, encode(robot.getLocation(), robot.getID()));
-                    n += 1;
-                } else {
-                    if (decodeLocation(rc.readSharedArray(robotIdx + Idx.enemyArchonDataOffset)) != robot.getLocation()) { 
-                        rc.writeSharedArray(robotIdx + Idx.enemyArchonDataOffset, encode(robot.getLocation(), robot.getID()));
-                    }
-                }
+            if (isThereRobotTypeAt(location, RobotType.ARCHON) && rc.senseRobotAtLocation(location).getTeam() != rc.getTeam()) {
+                int count = rc.readSharedArray(Idx.enemyArchonCount);
+                rc.writeSharedArray(count + Idx.enemyArchonDataOffset, encode(location, 0));
+                rc.writeSharedArray(Idx.enemyArchonCount, count + 1);
+                rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(60, 0));
+
+                System.out.println((count+1) + "th Enemy archon is at " + location);
+            } else {
+                rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(61, 0));
             }
         }
-        if (n != rc.readSharedArray(Idx.enemyArchonCount)) { rc.writeSharedArray(Idx.enemyArchonCount, n); }
+    }
+
+    protected MapLocation getClosestUndiscoveredEnemyArchon() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+        int minDistance = INF;
+        MapLocation closestLocation = null;
+
+        for (int i = 0; i < n * 3; ++i) {
+            MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset));
+            if (location.x >= 60) continue;
+
+            int distance = currentLocation.distanceSquaredTo(location);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestLocation = location;
+            }
+        }
+
+        return closestLocation;
     }
 
     protected int getEnemyArchonIdx(MapLocation location) throws GameActionException {
@@ -64,6 +85,7 @@ public strictfp class Droid extends Robot {
             if (isThereRobotTypeAt(location, RobotType.ARCHON)) { return location; }
         }
 
+        rc.disintegrate();
         return null;
     }
 
