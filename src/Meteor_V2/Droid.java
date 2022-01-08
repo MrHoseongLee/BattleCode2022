@@ -26,23 +26,23 @@ public strictfp class Droid extends Robot {
                 int robotIdx = getEnemyArchonIdx(robot.getID());
 
                 if (robotIdx == -1) {
-                    rc.writeSharedArray(n + 2, encode(robot.getLocation(), robot.getID()));
+                    rc.writeSharedArray(n + Idx.enemyArchonDataOffset, encode(robot.getLocation(), robot.getID()));
                     n += 1;
                 } else {
-                    if (decodeLocation(rc.readSharedArray(robotIdx + 2)) != robot.getLocation()) { 
-                        rc.writeSharedArray(robotIdx + 2, encode(robot.getLocation(), robot.getID()));
+                    if (decodeLocation(rc.readSharedArray(robotIdx + Idx.enemyArchonDataOffset)) != robot.getLocation()) { 
+                        rc.writeSharedArray(robotIdx + Idx.enemyArchonDataOffset, encode(robot.getLocation(), robot.getID()));
                     }
                 }
             }
         }
-        if (n != rc.readSharedArray(1)) { rc.writeSharedArray(1, n); }
+        if (n != rc.readSharedArray(Idx.enemyArchonCount)) { rc.writeSharedArray(Idx.enemyArchonCount, n); }
     }
 
     protected int getEnemyArchonIdx(MapLocation location) throws GameActionException {
         int code = encode(location, 0) & 4095;
 
         for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
-            if ((rc.readSharedArray(i + 2) & 4095) == code) { return i; }
+            if ((rc.readSharedArray(i + Idx.enemyArchonDataOffset) & 4095) == code) { return i; }
         }
 
         return -1;
@@ -52,7 +52,7 @@ public strictfp class Droid extends Robot {
         int code = ID >> 12;
 
         for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
-            if (((rc.readSharedArray(i + 2) << 12) & 8) == code) { return i; }
+            if (((rc.readSharedArray(i + Idx.enemyArchonDataOffset) << 12) & 8) == code) { return i; }
         }
 
         return -1;
@@ -71,7 +71,7 @@ public strictfp class Droid extends Robot {
         int code = encode(parentArchonLocation, 0) & 4095;
 
         for (int i = 0; i < rc.readSharedArray(Idx.teamArchonCount); ++i) {
-            if ((rc.readSharedArray(i + 6) & 4095) == code) { return i; }
+            if ((rc.readSharedArray(i + Idx.teamArchonDataOffset) & 4095) == code) { return i; }
         }
 
         return -1;

@@ -2,15 +2,15 @@ package Meteor_V2;
 
 import battlecode.common.*;
 
+import java.util.HashSet;
+
 public strictfp class Archon extends Building {
 
-    private int minerCnt = 0;
-    private int builderCnt = 0;
     private int soldierCnt = 0;
-    private int previousMinerSignal = 0;
     private int commandedScout = 0;
+
     private MapLocation repairTarget = null;
-    private RobotType buildType = null;
+    private MapLocation[] possibleEnemyArchonLocations = null;
 
     private final int archonIdx;
 
@@ -20,17 +20,19 @@ public strictfp class Archon extends Building {
         archonIdx = rc.readSharedArray(Idx.teamArchonCount);
 
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1); // Increment Archon count
-        rc.writeSharedArray(archonIdx + 6, encode(currentLocation, rc.getID()));
-        rc.writeSharedArray(archonIdx + 2, 0xFFFF);
-        rc.writeSharedArray(archonIdx + 10, 63);
+        rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
+        rc.writeSharedArray(archonIdx + Idx.enemyArchonDataOffset, 0xFFFF);
+        rc.writeSharedArray(archonIdx + Idx.teamSoldierTargetOffset, 63);
     }
 
     public void step() throws GameActionException {
         super.step();
 
+        if (rc.getRoundNum() == 2 && archonIdx == 0) { calculatePossibleEnemyArchonLocations(); }
+
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.SOLDIER && robot.getTeam() != rc.getTeam()) {
+            if (robot.getType() == RobotType.SOLDIER && !isRobotOnSameTeam(robot)) {
                 buildDroid(RobotType.SOLDIER);
                 break;
             }
@@ -88,53 +90,59 @@ public strictfp class Archon extends Building {
             commandedScout = 1;
         }*/
 
-        // For test
-        /*if(minerCnt < 1) {
-            if (buildDroid(RobotType.MINER)) {
-                minerCnt += 1;
-            }
-        }
-
-        if(builderCnt < 0) {
-            if (buildDroid(RobotType.BUILDER)) {
-                builderCount++;
-            }
-        }
-
-        if(soldierCnt < 1) {
-            if (buildDroid(RobotType.SOLDIER)) {
-                soldierCount++;
-            }
-        }*/
     }
 
-    private boolean buildDroid(RobotType robotType) throws GameActionException {
+    private void buildDroid(RobotType robotType) throws GameActionException {
+        Direction bestDirection = Direction.CENTER; int minRubble = INF;
+
         for (int i = 0; i < 8; ++i) {
-            Direction direction = directions[RNG.nextInt(8)];
-            if (rc.canBuildRobot(robotType, direction)) {
-                rc.buildRobot(robotType, direction);
-                return true;
+            Direction direction = directions[i];
+            int rubble = rc.senseRubble(rc.adjacentLocation(direction));
+            if (rc.canBuildRobot(robotType, direction) && minRubble > rubble) {
+                bestDirection = direction; minRubble = rubble;
             }
         }
-        return false;
+
+        if (bestDirection != Direction.CENTER) { rc.buildRobot(robotType, bestDirection); }
+    }
+
+    private void calculatePossibleEnemyArchonLocations() throws GameActionException {
+        int width = rc.getMapWidth()- 1; int height = rc.getMapHeight() - 1;
+        HashSet<MapLocation> possibleLocations = new HashSet<MapLocation>();
+        MapLocation[] teamArchonLocations = new MapLocation[rc.readSharedArray(Idx.teamArchonCount)];
+
+        for (int i = 0; i < rc.readSharedArray(Idx.teamArchonCount); ++i) {
+            MapLocation teamArchonLocation = decodeLocation(rc.readSharedArray(i + 6));
+            teamArchonLocations[i] = teamArchonLocation;
+            int x = teamArchonLocation.x; int y = teamArchonLocation.y;
+
+            possibleLocations.add(new MapLocation(width - x, y));
+            possibleLocations.add(new MapLocation(x, height - y));
+            possibleLocations.add(new MapLocation(width - x, height - y));
+        }
+
+        for (MapLocation teamArchonLocation : teamArchonLocations) {
+            possibleLocations.remove(teamArchonLocation);
+        }
+
+        possibleEnemyArchonLocations = possibleLocations.toArray(new MapLocation[0]);
     }
 
     private void findRepairTarget() {
+        if (rc.getHealth() < RobotType.ARCHON.getMaxHealth(1)) { repairTarget = currentLocation; return; }
+
         int minHealth = INF;
         repairTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20, rc.getTeam());
+
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() != rc.getTeam() || robot.getType().isBuilding()) continue;
+            if (robot.getType().isBuilding()) continue;
             if (robot.getHealth() == robot.getType().getMaxHealth(1)) continue;
-            if (currentLocation.distanceSquaredTo(robot.location) > 20) continue;
 
             int health = robot.getHealth();
 
-            if(health < minHealth) {
-                minHealth = health;
-                repairTarget = robot.location;
-            }
+            if(health < minHealth) { minHealth = health; repairTarget = robot.location; }
         }
     }
 }

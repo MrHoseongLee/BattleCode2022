@@ -48,7 +48,7 @@ public strictfp class Soldier extends Droid {
 
                     // Target is destroyed
                     if (idx != -1 && isThereNoEnemyArchon(target)) {
-                        rc.writeSharedArray(idx + 2, 63);
+                        rc.writeSharedArray(idx + Idx.enemyArchonDataOffset, 63);
                         idx = -1;
                     }
 
@@ -99,7 +99,7 @@ public strictfp class Soldier extends Droid {
     private boolean updateTargetForRaid() throws GameActionException {
         int n = rc.readSharedArray(Idx.enemyArchonCount);
         for (int i = 0; i < n; ++i) {
-            MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + 2));
+            MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
             if (targetCandidate.x != 63 && rc.getRoundNum() >= 200) {
                 target = targetCandidate;
                 return true;
