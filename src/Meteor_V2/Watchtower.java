@@ -5,7 +5,11 @@ import battlecode.common.*;
 public strictfp class Watchtower extends Building {
 
     private MapLocation attackTarget = null;
-    private boolean dead = false;
+    private MapLocation closestEnemyArchonLocation = null;
+
+    // private boolean isGoingToDieSoon = false;
+
+    private int distanceToEnemyArchon = INF;
 
     public Watchtower(RobotController rc) throws GameActionException {
         super(rc);
@@ -14,31 +18,69 @@ public strictfp class Watchtower extends Building {
     public void step() throws GameActionException {
         super.step();
 
-        findAttackTarget();
+        updateClosestEnemyArchonLocation();
 
-        if (attackTarget != null && rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
+        target = closestEnemyArchonLocation;
 
-        if (!dead && rc.getHealth() <= 30) {
-            rc.writeSharedArray(19, rc.readSharedArray(Idx.watchTowerCount) - 1);
-            dead = true;
+        if (rc.getMode() == RobotMode.PORTABLE) {
+            if (distanceToEnemyArchon - currentLocation.distanceSquaredTo(closestEnemyArchonLocation) > 5 && isOnBoundary()) {
+                if (rc.canTransform()) { rc.transform(); }
+            }
+            super.move();
+            return;
         }
+
+        updateAttackTarget();
+
+        if (attackTarget != null) {
+            if (rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
+        } 
+
+        else {
+            if (!isOnBoundary() || (rc.getRoundNum() % 100 == 0 && (currentLocation.x + currentLocation.y) % 2 == 0)) {
+                distanceToEnemyArchon = currentLocation.distanceSquaredTo(closestEnemyArchonLocation);
+                if (rc.canTransform()) { rc.transform(); }
+            }
+        }
+
+        /*
+        if (!isGoingToDieSoon && rc.getHealth() <= 30) {
+            rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) - 1);
+            isGoingToDieSoon = true;
+        }
+
+        if (isGoingToDieSoon && rc.getHealth() > 70) {
+            rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) + 1);
+            isGoingToDieSoon = false;
+        }
+        */
     }
 
-    private void findAttackTarget() {
+    private void updateAttackTarget() {
         int minHealth = INF;
         attackTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20, rc.getTeam().opponent());
+
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() == rc.getTeam()) continue;
-            if (currentLocation.distanceSquaredTo(robot.location) > 20) continue;
-
             int health = robot.getHealth();
-
-            if(health < minHealth) {
-                minHealth = health;
-                attackTarget = robot.location;
-            }
+            if(health < minHealth) { minHealth = health; attackTarget = robot.location; }
         }
+    }
+
+    private void updateClosestEnemyArchonLocation() throws GameActionException {
+        int minDistance = INF;
+        for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
+            MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
+            int distance = location.distanceSquaredTo(currentLocation);
+            if (distance < minDistance) { minDistance = distance; closestEnemyArchonLocation = location; }
+        }
+        if (closestEnemyArchonLocation == null) {
+            closestEnemyArchonLocation = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+        }
+    }
+
+    private boolean isOnBoundary() {
+        return rc.senseNearbyRobots(34, rc.getTeam().opponent()).length > 0;
     }
 }
