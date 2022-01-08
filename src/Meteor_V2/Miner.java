@@ -4,82 +4,77 @@ import battlecode.common.*;
 
 public strictfp class Miner extends Droid {
 
-    private MapLocation miningTarget = null;
-
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     public void step() throws GameActionException {
         super.step();
+
         updateTarget();
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
 
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() == rc.getTeam()) continue;
-            if (robot.getType() != RobotType.SOLDIER) continue;
-
-            nextDirection = robot.location.directionTo(currentLocation);
-            break;
+            if (robot.getType() == RobotType.SOLDIER && robot.getTeam() != rc.getTeam()) {
+                nextDirection = robot.location.directionTo(currentLocation);
+                break;
+            }
         }
 
         checkEnemyArchon();
 
-        // Mine only lead for now
-        if (currentLocation.equals(target) && miningTarget != null) {
-            int leadCount = rc.senseLead(miningTarget);
-            while (rc.isActionReady() && leadCount > 1) { rc.mineLead(miningTarget); leadCount--; }
-
-            for (Direction direction : Direction.allDirections()) {
-                MapLocation location = rc.adjacentLocation(direction);
-                if (rc.canSenseLocation(location)) {
-                    leadCount = rc.senseLead(location);
-                    while (rc.isActionReady() && leadCount > 1) { rc.mineLead(location); leadCount--; }
-                }
+        for (Direction direction : Direction.allDirections()) {
+            MapLocation location = rc.adjacentLocation(direction);
+            if (rc.canSenseLocation(location)) {
+                int leadCount = rc.senseLead(location);
+                while (rc.isActionReady() && leadCount > 1) { rc.mineLead(location); leadCount--; }
             }
-
-            return;
         }
 
         super.move();
+
         super.draw();
     }
 
-    protected void setTarget(MapLocation target) {
-        this.target = target;
-        miningTarget = target;
-    }
-
     private void updateTarget() throws GameActionException {
-        // If tile as no lead find another miningTarget
-        if (miningTarget != null && rc.canSenseLocation(miningTarget) && rc.senseLead(miningTarget) <= 1) { 
-            setTarget(null);
-        }
+        if (currentLocation.equals(target)) {
+            if(rc.senseNearbyLocationsWithLead(2).length >= 4) return;
+            else target = null;
+        } else if (target != null && rc.canSenseRobotAtLocation(target)) target = null;
 
-        if (currentLocation.equals(target) && miningTarget == null) {
-            target = null;
-        }
-
-        int maxValue = (miningTarget == null) ? -INF : -currentLocation.distanceSquaredTo(miningTarget);
-        MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(20);
+        int maxValue = 0;
+        if (target != null && currentLocation.distanceSquaredTo(target) <= 10) maxValue = getValue(target);
+        MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(10);
 
         // Loop through all lead locations and find the closest one
         for (MapLocation location : leadLocations) {
-            int leadCount = rc.senseLead(location);
-            if (leadCount < 5) { continue; }
-            // int value = leadCount - (int)(Math.sqrt(currentLocation.distanceSquaredTo(location)) * 10);
-            int value = -currentLocation.distanceSquaredTo(location);
-            if (value > maxValue) { maxValue = value; setTarget(location); }
-        }
-
-        if (miningTarget != null && currentLocation.distanceSquaredTo(miningTarget) < 22 - 4 * Math.sqrt(10)) {
-            target = bestLocationNextTo(miningTarget);
+            if (Clock.getBytecodesLeft() < 3000) break;
+            int value = getValue(location);
+            if (value > maxValue) { maxValue = value; target = location; }
         }
 
         if (target == null) {
-            miningTarget = null;
-            selectRandomTarget();
+            if (!updateTargetForRaid()) selectRandomTarget();
         }
+    }
+
+    private int getValue(MapLocation location) throws GameActionException {
+        int leadCount = 0;
+        for (Direction direction : Direction.allDirections()) {
+            MapLocation adjacentLocation = location.add(direction);
+            if (rc.canSenseLocation(adjacentLocation)) {
+                leadCount += rc.senseLead(adjacentLocation);
+
+                if (rc.canSenseRobotAtLocation(adjacentLocation)) {
+                    RobotInfo robot = rc.senseRobotAtLocation(adjacentLocation);
+                    if (robot.getID() != rc.getID() && robot.getType() == RobotType.MINER && robot.getTeam() == rc.getTeam())
+                        leadCount -= 10000;
+                }
+            }
+        }
+        if (leadCount < 4) return -INF;
+        int r = 1 + rc.senseRubble(location) / 10;
+        return leadCount / r;
     }
 }

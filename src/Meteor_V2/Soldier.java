@@ -109,18 +109,6 @@ public strictfp class Soldier extends Droid {
         }
     }
 
-    private boolean updateTargetForRaid() throws GameActionException {
-        int n = rc.readSharedArray(Idx.enemyArchonCount);
-        for (int i = 0; i < n; ++i) {
-            MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
-            if (targetCandidate.x != 63) {
-                target = targetCandidate;
-                return true;
-            }
-        }
-        return false;
-    }
-
     protected void selectRandomTarget() throws GameActionException {
         int t = Math.max(rc.getRoundNum() / 5, 5);
         int x1 = Math.max(parentArchonLocation.x - t, 0);
