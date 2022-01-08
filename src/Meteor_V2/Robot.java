@@ -69,6 +69,10 @@ public class Robot {
         target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
     }
 
+    protected boolean canSense3by3At(MapLocation location) {
+        return currentLocation.distanceSquaredTo(location) <= 10;
+    }
+
     protected boolean isThereBuildingAt(MapLocation location) throws GameActionException {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
@@ -103,7 +107,7 @@ public class Robot {
 
     private void calculateNextDirection() throws GameActionException {
         nextDirection = Direction.CENTER;
-        if (target == null) { return; }
+        if (target == null || currentLocation.equals(target)) { return; }
 
         double bestValue = INF;
 
