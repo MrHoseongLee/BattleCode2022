@@ -16,23 +16,25 @@ public strictfp class Builder extends Droid {
 
         // Repair if possible
         updateRepairTarget();
-        if (repairTarget != null && rc.canRepair(repairTarget)) {
-            rc.repair(repairTarget); 
-            buildTarget = null;
-            target = null;
-            return; 
+        if (repairTarget != null) {
+            if (repairTarget.isWithinDistanceSquared(currentLocation, RobotType.BUILDER.actionRadiusSquared)) {
+                if (rc.canRepair(repairTarget)) {
+                    rc.repair(repairTarget); return;
+                }
+            } else {
+                target = repairTarget;
+                super.move();
+                return;
+            }
         }
 
-        // Change target if target is already occupied
-        if (buildTarget != null && rc.canSenseLocation(buildTarget) && isThereBuildingAt(buildTarget)) { 
-            buildTarget = null; target = null;
+        updateBuildTarget();
+
+        if (buildTarget != null && canSense3by3At(buildTarget)) {
+            super.setTarget(bestLocationNextTo(buildTarget)); 
         }
 
         if (buildTarget == null) { selectRandomTarget(); }
-
-        if (buildTarget != null && currentLocation.distanceSquaredTo(buildTarget) < 22 - 4 * Math.sqrt(10)) {
-            super.setTarget(bestLocationNextTo(buildTarget)); 
-        }
 
         if (currentLocation.equals(target)) {
             Direction direction = currentLocation.directionTo(buildTarget);
@@ -48,6 +50,18 @@ public strictfp class Builder extends Droid {
         }
 
         super.move();
+    }
+
+    protected void updateBuildTarget() throws GameActionException {
+        int minDistance = INF; buildTarget = null; target = null;
+        for (MapLocation location : rc.getAllLocationsWithinRadiusSquared(currentLocation, RobotType.BUILDER.visionRadiusSquared)) {
+            if (isThereBuildingAt(location)) { continue; }
+            if (location.x % 2 == parentArchonLocation.x % 2 && location.y % 2 == parentArchonIdx % 2) {
+                int distance = currentLocation.distanceSquaredTo(location);
+                if (distance < minDistance) { minDistance = distance; buildTarget = location; }
+            }
+        }
+        target = buildTarget;
     }
 
     protected void selectRandomTarget() throws GameActionException {
@@ -92,7 +106,7 @@ public strictfp class Builder extends Droid {
         int minHealth = -INF;
         repairTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(5, rc.getTeam());
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.MINER.visionRadiusSquared, rc.getTeam());
 
         for (RobotInfo robot : nearbyRobots) {
             if (!robot.getType().isBuilding()) { continue; }
@@ -102,7 +116,7 @@ public strictfp class Builder extends Droid {
 
             int health = robot.getHealth();
 
-            if(health < minHealth) { minHealth = health; repairTarget = robot.location; }
+            if (health < minHealth) { minHealth = health; repairTarget = robot.location; }
         }
     }
 }
