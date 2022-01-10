@@ -7,7 +7,6 @@ public strictfp class Archon extends Building {
     private int minerCnt = 0;
     private int soldierCnt = 0;
     private int commandedScout = 0;
-
     private MapLocation repairTarget = null;
     private MapLocation[] possibleEnemyArchonLocations = null;
 
@@ -17,11 +16,12 @@ public strictfp class Archon extends Building {
         super(rc);
 
         archonIdx = rc.readSharedArray(Idx.teamArchonCount);
+        RNG.setSeed(archonIdx);
 
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1); // Increment Archon count
         rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
         //rc.writeSharedArray(archonIdx + Idx.enemyArchonDataOffset, 0xFFFF);
-        rc.writeSharedArray(archonIdx + Idx.teamSoldierTargetOffset, 63);
+        rc.writeSharedArray(archonIdx + Idx.teamSoldierTargetOffset, 60);
     }
 
     public void step() throws GameActionException {
@@ -29,33 +29,17 @@ public strictfp class Archon extends Building {
 
         if (rc.getRoundNum() == 2 && archonIdx == 0) { calculatePossibleEnemyArchonLocations(); }
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.SOLDIER && !isRobotOnSameTeam(robot)) {
-                buildDroid(RobotType.SOLDIER);
-                break;
-            }
-        }
-
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
 
-        /*if (rc.isActionReady() && buildType == null) {
-            if (lead >= 200 && RNG.nextInt() < 3) buildType = RobotType.BUILDER;
-            else {
-                int k = Math.min(4, RobotPlayer.turnCount / 100);
-                if (lead >= 1000 || RNG.nextInt(10) < 3 + k) buildType = RobotType.SOLDIER;
-                else buildType = RobotType.MINER;
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        if (lead <= 500) {
+            for (RobotInfo robot : nearbyRobots) {
+                if (robot.getType() == RobotType.SOLDIER && !isRobotOnSameTeam(robot)) {
+                    buildDroid(RobotType.SOLDIER);
+                    break;
+                }
             }
         }
-
-        if (buildType != null && lead >= buildType.buildCostLead) {
-            if (lead >= buildType.buildCostLead * 2 || rc.readSharedArray(20) == archonIdx) {
-                buildDroid(buildType);
-                buildType = null;
-                int n = rc.readSharedArray(0);
-                rc.writeSharedArray(20, (archonIdx + 1) % n);
-            }
-        }*/
 
         if (rc.isActionReady()) {
             int n = rc.readSharedArray(0);
@@ -68,47 +52,14 @@ public strictfp class Archon extends Building {
             }
             else if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
-                if (lead >= 100 || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
-                    int k = Math.min(3, RobotPlayer.turnCount / 100);
+                if (lead >= 75 * (n - archonIdx) || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
+                    int k = Math.min(4, RobotPlayer.turnCount / 50);
                     if (lead >= 1000 || RNG.nextInt(10) < 5 + k) buildDroid(RobotType.SOLDIER);
                     else buildDroid(RobotType.MINER);
                     rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
                 }
             }
         }
-        /*if (rc.isActionReady()) {
-            if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
-            else if (lead >= 75) {
-                if (lead >= 100 || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
-                    int k = Math.min(4, RobotPlayer.turnCount / 100);
-                    if (lead >= 1000 || RNG.nextInt(10) < 4 + k) buildDroid(RobotType.SOLDIER);
-                    else buildDroid(RobotType.MINER);
-                    int n = rc.readSharedArray(Idx.teamArchonCount);
-                    rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
-                }
-            }
-        }*/
-
-        // Command to soldier
-        /*if (commandedScout == 1) {
-            rc.writeSharedArray(archonIdx + 10, 100);
-            commandedScout = -100;
-        }
-        if (commandedScout < 0) { commandedScout += 1; }
-
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
-
-        soldierCnt = 0;
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.SOLDIER && robot.getTeam() == rc.getTeam())
-                soldierCnt += 1;
-        }
-
-        if(commandedScout == 0 && soldierCnt >= SQUAD_SOLDIER * 2) {
-            rc.writeSharedArray(archonIdx + 10, 110);
-            commandedScout = 1;
-        }*/
-
     }
 
     private void buildDroid(RobotType robotType) throws GameActionException {

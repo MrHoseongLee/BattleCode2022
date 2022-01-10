@@ -21,7 +21,7 @@ public strictfp class Miner extends Droid {
             }
         }
 
-        checkEnemyArchon();
+        //checkEnemyArchon();
 
         for (Direction direction : Direction.allDirections()) {
             MapLocation location = rc.adjacentLocation(direction);
@@ -54,7 +54,7 @@ public strictfp class Miner extends Droid {
         }
 
         if (target == null) {
-            if (!updateTargetForRaid()) selectRandomTarget();
+            selectRandomTarget();
         }
     }
 

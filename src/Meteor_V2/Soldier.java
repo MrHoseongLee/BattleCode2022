@@ -34,12 +34,21 @@ public strictfp class Soldier extends Droid {
 
         switch (mode) {
             case Wander:
-                if (target != null && target.equals(currentLocation)) { target = null; }
+                if (target != null && currentLocation.distanceSquaredTo(target) <= 2) { target = null; }
+
+                if (target != null && rc.canSenseLocation(target)) {
+                    int r = rc.senseRubble(target) / 10;
+                    if (r >= rc.senseRubble(currentLocation) / 10 + 2) target = null;
+                }
 
                 // Move to attack target
                 if (attackTarget != null) { target = attackTarget; }
+                //else if (updateTargetForDefend()) mode = Mode.Defend;
 
-                if (target == null) { selectRandomTarget(); }
+                if (target == null) {
+                    target = getWeakestFriendlySoldier(nearbyRobots);
+                    if (target.equals(currentLocation)) selectRandomTarget();
+                }
 
                 break;
 
@@ -64,6 +73,7 @@ public strictfp class Soldier extends Droid {
                         mode = Mode.Scout;
                     }
                 }
+                if (attackTarget != null) { target = attackTarget; }
                 break;
         }
 
@@ -75,7 +85,7 @@ public strictfp class Soldier extends Droid {
         }
 
         if (attackTarget != null && rc.isActionReady() && currentLocation.distanceSquaredTo(attackTarget) > 13) {
-            if(count(nearbyRobots) >= 0) nextDirection = currentLocation.directionTo(attackTarget);
+            if(count(nearbyRobots) <= 1) nextDirection = currentLocation.directionTo(attackTarget);
             else nextDirection = attackTarget.directionTo(currentLocation);
             super.move();
             if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
@@ -93,6 +103,7 @@ public strictfp class Soldier extends Droid {
         }
 
         super.move();
+        super.draw();
 
         rc.setIndicatorString("mode = " + mode + ", target = " + target);
     }
@@ -127,8 +138,7 @@ public strictfp class Soldier extends Droid {
         int cnt = 0;
         for(RobotInfo robot : nearbyRobots) {
             if (robot.getType() != RobotType.SOLDIER) continue;
-            if (robot.getTeam() == rc.getTeam()) cnt++;
-            else cnt--;
+            if (robot.getTeam() != rc.getTeam()) cnt++;
         }
         return cnt;
     }
@@ -152,18 +162,20 @@ public strictfp class Soldier extends Droid {
         return closest;
     }
 
-    protected void selectRandomTarget() throws GameActionException {
-        int x = RNG.nextInt(rc.getMapWidth()) / 5 * 5;
-        int y = RNG.nextInt(rc.getMapHeight()) / 5 * 5;
-        target = new MapLocation(x, y);
-    }
+    private MapLocation getWeakestFriendlySoldier(RobotInfo[] nearbyRobots) {
+        int minHealth = rc.getHealth();
+        MapLocation weakest = currentLocation;
 
-    /*protected void selectRandomTarget() throws GameActionException {
-        int t = Math.max(rc.getRoundNum() / 5, 5);
-        int x1 = Math.max(parentArchonLocation.x - t, 0);
-        int y1 = Math.max(parentArchonLocation.y - t, 0);
-        int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);
-        int y2 = Math.min(parentArchonLocation.y + t, rc.getMapHeight() - 1);
-        target = new MapLocation(RNG.nextInt(x2 - x1 + 1) + x1, RNG.nextInt(y2 - y1 + 1) + y1);
-    }*/
+        for(RobotInfo robot : nearbyRobots) {
+            if (robot.getTeam() != rc.getTeam()) continue;
+            if (robot.getType() != RobotType.SOLDIER) continue;
+
+            if(robot.getHealth() < minHealth) {
+                minHealth = robot.getHealth();
+                weakest = robot.location;
+            }
+        }
+
+        return weakest;
+    }
 }
