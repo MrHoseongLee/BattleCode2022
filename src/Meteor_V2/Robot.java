@@ -13,6 +13,8 @@ public class Robot {
     MapLocation decodeLocation (int code) { return new MapLocation(code & 63, (code >> 6) & 63); }
 
     protected RobotController rc;
+    protected BFS bfs;
+    protected Minimap minimap;
 
     protected MapLocation currentLocation;
     protected MapLocation previousLocation;
@@ -40,6 +42,9 @@ public class Robot {
         this.rc = rc;
         this.currentLocation = rc.getLocation();
         RNG.setSeed(rc.getRoundNum());
+
+        if(!rc.getType().isBuilding()) bfs = new BFSDroid(rc);
+        minimap = new Minimap(rc);
     }
 
     public void step() throws GameActionException {
@@ -105,7 +110,7 @@ public class Robot {
         return bestNeighbor;
     }
 
-    private void calculateNextDirection() throws GameActionException {
+    protected void calculateNextDirection() throws GameActionException {
         nextDirection = Direction.CENTER;
         if (target == null || currentLocation.equals(target)) { return; }
 
@@ -120,30 +125,23 @@ public class Robot {
             if(!rc.onTheMap(nextLocation) || rc.canSenseRobotAtLocation(nextLocation)) { continue; }
 
             // Don't backtrack
-            if (nextLocation.equals(previousLocation)) { continue; }
+            //if (nextLocation.equals(previousLocation)) { continue; }
 
             int distance = nextLocation.distanceSquaredTo(target);
 
             if (distance == 0) { nextDirection = direction; break; }
 
-            double value = Math.sqrt(distance) + (double)rc.senseRubble(nextLocation) / 10.0;
+            //double value = Math.sqrt(distance) + (double)rc.senseRubble(nextLocation) / 10.0;
+            double value = distance * (1 + rc.senseRubble(nextLocation) / 10.0);
 
-            // If moving in this diection increases distance, add aditional penatly
+            // If moving in this direction increases distance, add additional penalty
             if (distance > originalDistance) { value += 100000; }//Math.sqrt(distance - originalDistance) * 2; }
 
             if (value < bestValue) { bestValue = value; nextDirection = direction; }
         }
-    }
 
-    protected boolean updateTargetForRaid() throws GameActionException {
-        int n = rc.readSharedArray(Idx.enemyArchonCount);
-        for (int i = 0; i < n; ++i) {
-            MapLocation targetCandidate = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
-            if (targetCandidate.x != 63) {
-                target = targetCandidate;
-                return true;
-            }
+        if (rc.adjacentLocation(nextDirection).equals(previousLocation)) {
+            nextDirection = currentLocation.directionTo(target);
         }
-        return false;
     }
 }

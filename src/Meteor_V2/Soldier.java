@@ -4,15 +4,9 @@ import battlecode.common.*;
 
 public strictfp class Soldier extends Droid {
 
-    private enum Mode {
-        Wander,     // Attack nearby enemy. If not found, select random target.
-        Scout,      // Move to the closest undiscovered enemy archon location.
-        Raid,       // Move to and attack specific enemy archon.
-    }
-
-    private Mode mode = Mode.Wander;
     private RobotInfo[] nearbyRobots;
     private MapLocation attackTarget = null;
+    private boolean movingToRandomTarget = false;
 
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -23,95 +17,55 @@ public strictfp class Soldier extends Droid {
 
         nearbyRobots = rc.senseNearbyRobots();
 
-        // An enemy archon found
-        if (updateTargetForRaid()) { mode = Mode.Raid; }
-
         // Always attack nearby enemy
         updateAttackTarget();
 
         // Check enemy archon in vision
-        checkEnemyArchon();
+        minimap.reportNearbyEnemies(nearbyRobots);
 
-        switch (mode) {
-            case Wander:
-                if (target != null && currentLocation.distanceSquaredTo(target) <= 2) { target = null; }
+        if (target != null && currentLocation.distanceSquaredTo(target) <= 2) { target = null; }
 
-                if (target != null && rc.canSenseLocation(target)) {
-                    int r = rc.senseRubble(target) / 10;
-                    if (r >= rc.senseRubble(currentLocation) / 10 + 2) target = null;
-                }
+        if (target != null && rc.canSenseLocation(target)) {
+            if (rc.senseRubble(target) >= rc.senseRubble(currentLocation) + 5) target = null;
+        }
 
-                // Move to attack target
-                if (attackTarget != null) { target = attackTarget; }
-                //else if (updateTargetForDefend()) mode = Mode.Defend;
+        // Move to attack target
+        if (attackTarget != null) {
+            target = attackTarget;
+            movingToRandomTarget = false;
+        }
 
-                if (target == null) {
-                    target = getWeakestFriendlySoldier(nearbyRobots);
-                    if (target.equals(currentLocation)) selectRandomTarget();
-                }
-
-                break;
-
-            case Scout:
-                if (target != null && rc.canSenseLocation(target)) { target = null; }
-                if (target == null) { target = getClosestUndiscoveredEnemyArchon(); }
-                if (target == null) { mode = Mode.Wander; return; }
-                break;
-
-            case Raid:
-                if (target != null) {
-                    int idx = getEnemyArchonIdx(target);
-
-                    // Target is destroyed
-                    if (idx != -1 && isThereNoEnemyArchon(target)) {
-                        rc.writeSharedArray(idx + Idx.enemyArchonDataOffset, 63);
-                        idx = -1;
-                    }
-
-                    if (idx == -1) {
-                        target = null;
-                        mode = Mode.Scout;
-                    }
-                }
-                if (attackTarget != null) { target = attackTarget; }
-                break;
+        MapLocation enemy = minimap.getClosestEnemy();
+        if (enemy != null && (target == null || currentLocation.distanceSquaredTo(target) >= 40)) {
+            target = enemy;
+            movingToRandomTarget = false;
+        }
+        if (target == null || (enemy == null && !movingToRandomTarget)) {
+            selectRandomTarget();
+            movingToRandomTarget = true;
         }
 
         MapLocation closest = getClosestEnemySoldier(nearbyRobots);
         if (closest != null && !closest.equals(attackTarget) && currentLocation.distanceSquaredTo(closest) < 13) {
             if (rc.canAttack(closest)) rc.attack(closest);
-            nextDirection = closest.directionTo(currentLocation);
-            super.move();
+            updateTargetForEvasion(closest);
+            move();
         }
 
-        if (attackTarget != null && rc.isActionReady() && currentLocation.distanceSquaredTo(attackTarget) > 13) {
-            if(count(nearbyRobots) <= 1) nextDirection = currentLocation.directionTo(attackTarget);
-            else nextDirection = attackTarget.directionTo(currentLocation);
-            super.move();
-            if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
-        }
-
-        if (attackTarget != null && rc.canAttack(attackTarget)) {
-            if (mode != Mode.Raid || !attackTarget.equals(target)) {
-                nextDirection = attackTarget.directionTo(currentLocation);
-                if (rc.canSenseLocation(currentLocation.add(nextDirection))) {
-                    int r = rc.senseRubble(currentLocation.add(nextDirection)) / 10;
-                    if (r >= rc.senseRubble(currentLocation) / 10 + 2) nextDirection = Direction.CENTER;
-                }
+        if (attackTarget != null && rc.isActionReady()) {
+            if (currentLocation.distanceSquaredTo(attackTarget) > 13) {
+                if(countEnemySoldier(nearbyRobots) > 1) updateTargetForEvasion(attackTarget);
+                move();
+                if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
+            } else {
+                updateTargetForEvasion(attackTarget);
+                rc.attack(attackTarget);
             }
-            rc.attack(attackTarget);
         }
 
-        super.move();
+        move();
+
         super.draw();
-
-        rc.setIndicatorString("mode = " + mode + ", target = " + target);
-    }
-
-    private boolean isThereNoEnemyArchon(MapLocation loc) throws GameActionException {
-        if (!rc.canSenseRobotAtLocation(loc)) return false;
-        RobotInfo robot = rc.senseRobotAtLocation(loc);
-        return robot.getTeam() == rc.getTeam() || robot.getType() != RobotType.ARCHON;
     }
 
     private void updateAttackTarget() {
@@ -121,10 +75,8 @@ public strictfp class Soldier extends Droid {
         for (RobotInfo robot : nearbyRobots) {
             if (robot.getTeam() == rc.getTeam()) continue;
 
-            int distance = currentLocation.distanceSquaredTo(robot.location);
-            //if(mode != Mode.Wander && distance > 13) continue;
-
             int health = robot.getHealth();
+            if(robot.getType() == RobotType.SOLDIER) { health -= 50; }
             if(robot.getType() == RobotType.ARCHON) { health -= 500; }
 
             if(health < minHealth) {
@@ -134,7 +86,7 @@ public strictfp class Soldier extends Droid {
         }
     }
 
-    private int count(RobotInfo[] nearbyRobots) {
+    private int countEnemySoldier(RobotInfo[] nearbyRobots) {
         int cnt = 0;
         for(RobotInfo robot : nearbyRobots) {
             if (robot.getType() != RobotType.SOLDIER) continue;
@@ -160,22 +112,5 @@ public strictfp class Soldier extends Droid {
         }
 
         return closest;
-    }
-
-    private MapLocation getWeakestFriendlySoldier(RobotInfo[] nearbyRobots) {
-        int minHealth = rc.getHealth();
-        MapLocation weakest = currentLocation;
-
-        for(RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() != rc.getTeam()) continue;
-            if (robot.getType() != RobotType.SOLDIER) continue;
-
-            if(robot.getHealth() < minHealth) {
-                minHealth = robot.getHealth();
-                weakest = robot.location;
-            }
-        }
-
-        return weakest;
     }
 }
