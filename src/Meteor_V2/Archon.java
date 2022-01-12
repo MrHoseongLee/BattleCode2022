@@ -18,7 +18,7 @@ public strictfp class Archon extends Building {
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1);
         rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
 
-        if (archonIdx == rc.getArchonCount() - 1) { calculatePossibleEnemyArchonLocations(); buildDroid(RobotType.MINER); }
+        if (archonIdx == rc.getArchonCount() - 1) { calculatePossibleEnemyArchonLocations(); }
     }
 
     public void step() throws GameActionException {
@@ -49,8 +49,6 @@ public strictfp class Archon extends Building {
 
         minimap.reportNearbyEnemies(nearbyRobots);
 
-        /*
-
         if (lead <= 500) {
             for (RobotInfo robot : nearbyRobots) {
                 if (robot.getType() == RobotType.SOLDIER && !isRobotOnSameTeam(robot)) {
@@ -78,7 +76,6 @@ public strictfp class Archon extends Building {
                 }
             }
         }
-        */
     }
 
     private void buildDroid(RobotType robotType) throws GameActionException {
