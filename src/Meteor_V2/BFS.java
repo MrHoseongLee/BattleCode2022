@@ -19,8 +19,7 @@ public abstract class BFS {
         if (rc.getLocation().equals(target)) { return; }
 
         Direction direction = getBestDir(target);
-        System.out.println("HELLO");
-
+        
         if (direction != null && rc.canMove(direction)) {
             if (!avoidRubble || rc.senseRubble(rc.adjacentLocation(direction)) < rc.senseRubble(currentLocation) + 5) {
                 rc.move(direction);
