@@ -44,6 +44,27 @@ public strictfp class Droid extends Robot {
         }
     }
 
+    protected void checkEnemyArchon() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+
+        for (int i = 0; i < n * 3; ++i) {
+            int w = rc.readSharedArray(i + Idx.enemyArchonLocationOffset);
+            MapLocation location = decodeLocation(w);
+            int state = decodeID(w);
+            if (!rc.canSenseLocation(location)) continue;
+            if (state >= 2) continue;
+
+            if (isThereRobotTypeAt(location, RobotType.ARCHON) && rc.senseRobotAtLocation(location).getTeam() != rc.getTeam()) {
+                if (state == 0) {
+                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(location, 1));
+                    System.out.println("An enemy archon is at " + location);
+                }
+            } else {
+                rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(location, state + 2));
+            }
+        }
+    }
+
     private MapLocation getParentArchonLocation() throws GameActionException {
         for(Direction direction : directions) {
             MapLocation location = rc.adjacentLocation(direction);

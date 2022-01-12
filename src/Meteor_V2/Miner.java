@@ -33,6 +33,8 @@ public strictfp class Miner extends Droid {
 
         move();
 
+        if (Clock.getBytecodesLeft() >= 1000) checkEnemyArchon();
+
         super.draw();
     }
 

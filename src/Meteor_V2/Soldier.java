@@ -20,7 +20,7 @@ public strictfp class Soldier extends Droid {
         // Always attack nearby enemy
         updateAttackTarget();
 
-        // Check enemy archon in vision
+        // Check enemy in vision
         minimap.reportNearbyEnemies(nearbyRobots);
 
         if (target != null && currentLocation.distanceSquaredTo(target) <= 2) { target = null; }
@@ -64,6 +64,8 @@ public strictfp class Soldier extends Droid {
         }
 
         move();
+
+        if (Clock.getBytecodesLeft() >= 1000) checkEnemyArchon();
 
         super.draw();
     }

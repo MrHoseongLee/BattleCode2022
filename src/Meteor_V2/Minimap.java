@@ -4,17 +4,17 @@ import battlecode.common.*;
 
 public class Minimap {
 
-    final int GRID_SIZE = 8;
-    final int GRID_ROW, GRID_COLUMN, GRID_MAX_IDX;
+    final int GRID_SIZE, GRID_ROW, GRID_COLUMN, GRID_MAX_IDX;
 
     RobotController rc;
 
     Minimap(RobotController rc) {
         this.rc = rc;
 
+        GRID_SIZE = (int) Math.ceil(Math.sqrt(rc.getMapHeight() * rc.getMapWidth() / 128.0)) + 3;
         GRID_ROW = (rc.getMapHeight() - 1) / GRID_SIZE + 1;
         GRID_COLUMN = (rc.getMapWidth() - 1) / GRID_SIZE + 1;
-        GRID_MAX_IDX = (GRID_ROW * GRID_COLUMN - 1) / 8 + 1;
+        GRID_MAX_IDX = (GRID_ROW * GRID_COLUMN - 1) / 8 + 1; // max 13
     }
 
     void initTurn() throws GameActionException {
@@ -26,7 +26,8 @@ public class Minimap {
                 int r = (i*8 + j) / GRID_COLUMN, c = (i*8 + j) % GRID_COLUMN;
                 int x = c * GRID_SIZE + GRID_SIZE / 2, y = r * GRID_SIZE + GRID_SIZE / 2;
                 if(level == 1) rc.setIndicatorDot(new MapLocation(x, y), 255, 255, 0);
-                if(level == 2) rc.setIndicatorDot(new MapLocation(x, y), 255, 0, 0);
+                if(level == 2) rc.setIndicatorDot(new MapLocation(x, y), 255, 153, 51);
+                if(level == 3) rc.setIndicatorDot(new MapLocation(x, y), 255, 80, 80);
             }
             if (rc.getRoundNum() % 2 == 1) rc.writeSharedArray(32 + i, 0);
             else rc.writeSharedArray(32 + i + GRID_MAX_IDX, 0);
@@ -43,8 +44,8 @@ public class Minimap {
     void reportNearbyEnemies(RobotInfo[] nearbyRobots) throws GameActionException {
         for(RobotInfo robot : nearbyRobots) {
             if(robot.getTeam() == rc.getTeam()) continue;
-            if(robot.getType() == RobotType.MINER) reportEnemy(robot.location, 1);
-            if(robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) reportEnemy(robot.location, 2);
+            if(robot.getType() == RobotType.MINER) reportEnemy(robot.location, 2);
+            if(robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) reportEnemy(robot.location, 3);
         }
     }
 

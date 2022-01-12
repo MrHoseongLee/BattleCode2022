@@ -22,14 +22,25 @@ public strictfp class Archon extends Building {
     public void step() throws GameActionException {
         super.step();
 
-        if(archonIdx == getFirstLivingTeamArchonIdx()) minimap.initTurn();
+        final int n = rc.readSharedArray(Idx.teamArchonCount);
+        final int lead = rc.getTeamLeadAmount(rc.getTeam());
+
+        if (rc.getRoundNum() == 2 && archonIdx == 0) { calculatePossibleEnemyArchonLocations(); }
+
+        if(archonIdx == getFirstLivingTeamArchonIdx()) {
+            minimap.initTurn();
+
+            for (int i = 0; i < n * 3; ++i) {
+                MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset));
+                int state = decodeID(rc.readSharedArray(i + Idx.enemyArchonLocationOffset));
+                if (state <= 1) minimap.reportEnemy(location, state + 1);
+            }
+        }
 
         if(!dead && rc.getHealth() <= 100) {
             dead = true;
             rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, 60);
         }
-
-        final int lead = rc.getTeamLeadAmount(rc.getTeam());
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
 
@@ -45,7 +56,6 @@ public strictfp class Archon extends Building {
         }
 
         if (rc.isActionReady()) {
-            int n = rc.readSharedArray(Idx.teamArchonCount);
             if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (180 * n)) {
                 if (lead >= 50 * countLivingTeamArchon(archonIdx) || (lead >= 50 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
                     buildDroid(RobotType.MINER);
@@ -94,5 +104,28 @@ public strictfp class Archon extends Building {
             if (rc.readSharedArray(i + Idx.teamArchonDataOffset) != 60)
                 return i;
         return archonIdx;
+    }
+
+    private void calculatePossibleEnemyArchonLocations() throws GameActionException {
+        int width = rc.getMapWidth() - 1; int height = rc.getMapHeight() - 1;
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+
+        for (int i = 0; i < n; ++i) {
+            MapLocation teamArchonLocation = decodeLocation(rc.readSharedArray(i + Idx.teamArchonDataOffset));
+            int x = teamArchonLocation.x, y = teamArchonLocation.y;
+
+            rc.writeSharedArray(i * 3 + Idx.enemyArchonLocationOffset, encode(width - x, y));
+            rc.writeSharedArray(i * 3 + 1 + Idx.enemyArchonLocationOffset, encode(x, height - y));
+            rc.writeSharedArray(i * 3 + 2 + Idx.enemyArchonLocationOffset, encode(width - x, height - y));
+        }
+
+        for (int i = 0; i < n * 3; ++i) {
+            for(int j = 0; j < i; ++j) {
+                if (decodeLocation(rc.readSharedArray(i + Idx.enemyArchonLocationOffset)).equals(decodeLocation(rc.readSharedArray(j + Idx.enemyArchonLocationOffset)))) {
+                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(61, 0));
+                    break;
+                }
+            }
+        }
     }
 }
