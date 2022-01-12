@@ -4,22 +4,29 @@ import battlecode.common.*;
 
 public abstract class BFS {
 
-    RobotController rc;
+    protected final RobotController rc;
 
-    BFS(RobotController rc) {
+    public BFS (RobotController rc) {
         this.rc = rc;
     }
 
-    void move(MapLocation target) throws GameActionException {
-        move(target, false);
+    public void move(MapLocation target) throws GameActionException { move(target, false); }
+
+    public void move(MapLocation target, boolean avoidRubble) throws GameActionException {
+        MapLocation currentLocation = rc.getLocation();
+
+        if (!rc.isMovementReady()) { return; }
+        if (rc.getLocation().equals(target)) { return; }
+
+        Direction direction = getBestDir(target);
+        System.out.println("HELLO");
+
+        if (direction != null && rc.canMove(direction)) {
+            if (!avoidRubble || rc.senseRubble(rc.adjacentLocation(direction)) < rc.senseRubble(currentLocation) + 5) {
+                rc.move(direction);
+            }
+        }
     }
 
-    void move(MapLocation target, boolean avoidRubble) throws GameActionException {
-        if(!rc.isMovementReady()) return;
-        if(rc.getLocation().equals(target)) return;
-
-        Direction dir = getBestDir(target);
-        if(dir != null && rc.canMove(dir) && (!avoidRubble || rc.senseRubble(rc.getLocation().add(dir)) < rc.senseRubble(rc.getLocation()) + 5)) rc.move(dir);
-    }
-    abstract Direction getBestDir(MapLocation target) throws GameActionException;
+    protected abstract Direction getBestDir(MapLocation target) throws GameActionException;
 }

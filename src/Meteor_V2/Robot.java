@@ -2,22 +2,28 @@ package Meteor_V2;
 
 import battlecode.common.*;
 
-import java.lang.Math;
 import java.util.Random;
 
 public class Robot {
 
     int encode (MapLocation location, int ID) { return location.x | (location.y << 6) | (ID << 12); }
     int encode (int x, int y) { return x | (y << 6); }
-    int decodeID (int code) { return (code >> 12) & 15; }
-    MapLocation decodeLocation (int code) { return new MapLocation(code & 63, (code >> 6) & 63); }
 
-    protected RobotController rc;
-    protected BFS bfs;
-    protected Minimap minimap;
+    int decodeID (int code) { return (code >> 12) & 0xF; }
+    MapLocation decodeLocation (int code) { return new MapLocation(code & 0x3F, (code >> 6) & 0x3F); }
+
+    protected final RobotController rc;
+
+    protected BFS bfs; // TODO change to final if BFSBuilding is made
+    protected final Minimap minimap;
+
+    private final Team team;
 
     protected MapLocation currentLocation;
     protected MapLocation previousLocation;
+
+    protected MapLocation target = null;
+    protected Direction nextDirection = null;
 
     protected static final Random RNG = new Random(42);
 
@@ -33,17 +39,16 @@ public class Robot {
             Direction.NORTHWEST,
     };
 
-    protected MapLocation target = null;
-    protected Direction nextDirection = null;
-
-    protected static final int INF = 0x3f3f3f3f;
+    protected static final int INF = 0x3F3F3F3F;
 
     public Robot(RobotController rc) throws GameActionException {
         this.rc = rc;
         this.currentLocation = rc.getLocation();
-        RNG.setSeed(rc.getRoundNum());
 
-        if(!rc.getType().isBuilding()) bfs = new BFSDroid(rc);
+        RNG.setSeed(rc.getRoundNum());
+        team = rc.getTeam();
+
+        if (!rc.getType().isBuilding()) { bfs = new BFSDroid(rc); }
         minimap = new Minimap(rc);
     }
 
@@ -74,10 +79,6 @@ public class Robot {
         target = new MapLocation(RNG.nextInt(rc.getMapWidth()), RNG.nextInt(rc.getMapHeight()));
     }
 
-    protected boolean canSense3by3At(MapLocation location) {
-        return currentLocation.distanceSquaredTo(location) <= 10;
-    }
-
     protected boolean isThereBuildingAt(MapLocation location) throws GameActionException {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().isBuilding();
     }
@@ -87,7 +88,7 @@ public class Robot {
     }
 
     protected boolean isRobotOnSameTeam(RobotInfo robot) {
-        return robot.getTeam().equals(rc.getTeam());
+        return robot.getTeam().equals(team);
     }
 
     protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {

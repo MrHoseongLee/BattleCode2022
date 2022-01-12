@@ -353,31 +353,31 @@ public class BFSDroid extends BFS {
     static Direction d68;
     static double p68;
     
-    Direction getBestDir(MapLocation target) throws GameActionException {
+    protected Direction getBestDir(MapLocation target) throws GameActionException {
         l34 = rc.getLocation();
         v34 = 0; 
-        l43 = l34.add(Direction.EAST);
+        l43 = rc.adjacentLocation(Direction.EAST);
         v43 = 1000000;
         d43 = null;
-        l44 = l34.add(Direction.NORTHEAST);
+        l44 = rc.adjacentLocation(Direction.NORTHEAST);
         v44 = 1000000;
         d44 = null;
-        l35 = l34.add(Direction.NORTH);
+        l35 = rc.adjacentLocation(Direction.NORTH);
         v35 = 1000000;
         d35 = null;
-        l26 = l34.add(Direction.NORTHWEST);
+        l26 = rc.adjacentLocation(Direction.NORTHWEST);
         v26 = 1000000;
         d26 = null;
-        l25 = l34.add(Direction.WEST);
+        l25 = rc.adjacentLocation(Direction.WEST);
         v25 = 1000000;
         d25 = null;
-        l24 = l34.add(Direction.SOUTHWEST);
+        l24 = rc.adjacentLocation(Direction.SOUTHWEST);
         v24 = 1000000;
         d24 = null;
-        l33 = l34.add(Direction.SOUTH);
+        l33 = rc.adjacentLocation(Direction.SOUTH);
         v33 = 1000000;
         d33 = null;
-        l42 = l34.add(Direction.SOUTHEAST);
+        l42 = rc.adjacentLocation(Direction.SOUTHEAST);
         v42 = 1000000;
         d42 = null;
         l17 = l25.add(Direction.NORTHWEST);
@@ -562,66 +562,56 @@ public class BFSDroid extends BFS {
         d68 = null;
         
         if(rc.onTheMap(l25) && (target.equals(l25) || !rc.canSenseRobotAtLocation(l25))) {
-            p25 = 1 + rc.senseRubble(l25) / 10.0;
-            if(v25 > v34 + p25) {
-                v25 = v34 + p25;
-                d25 = Direction.WEST;
-            }
+            p25 = 10.0 + rc.senseRubble(l25);
+            v25 = v34 + p25;
+            d25 = Direction.WEST;
         }
         if(rc.onTheMap(l33) && (target.equals(l33) || !rc.canSenseRobotAtLocation(l33))) {
-            p33 = 1 + rc.senseRubble(l33) / 10.0;
-            if(v33 > v34 + p33) {
-                v33 = v34 + p33;
-                d33 = Direction.SOUTH;
-            }
+            p33 = 10.0 + rc.senseRubble(l33);
+            v33 = v34 + p33;
+            d33 = Direction.SOUTH;
             if(v33 > v25 + p33) {
                 v33 = v25 + p33;
                 d33 = d25;
             }
         }
         if(rc.onTheMap(l35) && (target.equals(l35) || !rc.canSenseRobotAtLocation(l35))) {
-            p35 = 1 + rc.senseRubble(l35) / 10.0;
+            p35 = 10.0 + rc.senseRubble(l35);
             if(v35 > v25 + p35) {
                 v35 = v25 + p35;
                 d35 = d25;
             }
-            if(v35 > v34 + p35) {
-                v35 = v34 + p35;
-                d35 = Direction.NORTH;
-            }
+            v35 = v34 + p35;
+            d35 = Direction.NORTH;
         }
         if(rc.onTheMap(l43) && (target.equals(l43) || !rc.canSenseRobotAtLocation(l43))) {
-            p43 = 1 + rc.senseRubble(l43) / 10.0;
+            p43 = 10.0 + rc.senseRubble(l43);
             if(v43 > v35 + p43) {
                 v43 = v35 + p43;
                 d43 = d35;
             }
-            if(v43 > v34 + p43) {
-                v43 = v34 + p43;
-                d43 = Direction.EAST;
-            }
+            v43 = v34 + p43;
+            d43 = Direction.EAST;
             if(v43 > v33 + p43) {
                 v43 = v33 + p43;
                 d43 = d33;
             }
         }
         if(rc.onTheMap(l24) && (target.equals(l24) || !rc.canSenseRobotAtLocation(l24))) {
-            p24 = 1 + rc.senseRubble(l24) / 10.0;
+            p24 = 10.0 + rc.senseRubble(l24);
             if(v24 > v33 + p24) {
                 v24 = v33 + p24;
                 d24 = d33;
             }
-            if(v24 > v34 + p24) {
-                v24 = v34 + p24;
-                d24 = Direction.SOUTHWEST;
-            }
+            v24 = v34 + p24;
+            d24 = Direction.SOUTHWEST;
             if(v24 > v25 + p24) {
                 v24 = v25 + p24;
                 d24 = d25;
             }
         }
         if(rc.onTheMap(l26) && (target.equals(l26) || !rc.canSenseRobotAtLocation(l26))) {
-            p26 = 1 + rc.senseRubble(l26) / 10.0;
+            p26 = 10.0 + rc.senseRubble(l26);
             if(v26 > v35 + p26) {
                 v26 = v35 + p26;
                 d26 = d35;
@@ -630,43 +620,37 @@ public class BFSDroid extends BFS {
                 v26 = v25 + p26;
                 d26 = d25;
             }
-            if(v26 > v34 + p26) {
-                v26 = v34 + p26;
-                d26 = Direction.NORTHWEST;
-            }
+            v26 = v34 + p26;
+            d26 = Direction.NORTHWEST;
         }
         if(rc.onTheMap(l42) && (target.equals(l42) || !rc.canSenseRobotAtLocation(l42))) {
-            p42 = 1 + rc.senseRubble(l42) / 10.0;
+            p42 = 10.0 + rc.senseRubble(l42);
             if(v42 > v43 + p42) {
                 v42 = v43 + p42;
                 d42 = d43;
             }
-            if(v42 > v34 + p42) {
-                v42 = v34 + p42;
-                d42 = Direction.SOUTHEAST;
-            }
+            v42 = v34 + p42;
+            d42 = Direction.SOUTHEAST;
             if(v42 > v33 + p42) {
                 v42 = v33 + p42;
                 d42 = d33;
             }
         }
         if(rc.onTheMap(l44) && (target.equals(l44) || !rc.canSenseRobotAtLocation(l44))) {
-            p44 = 1 + rc.senseRubble(l44) / 10.0;
+            p44 = 10.0 + rc.senseRubble(l44);
             if(v44 > v35 + p44) {
                 v44 = v35 + p44;
                 d44 = d35;
             }
-            if(v44 > v34 + p44) {
-                v44 = v34 + p44;
-                d44 = Direction.NORTHEAST;
-            }
+            v44 = v34 + p44;
+            d44 = Direction.NORTHEAST;
             if(v44 > v43 + p44) {
                 v44 = v43 + p44;
                 d44 = d43;
             }
         }
         if(rc.onTheMap(l16) && (target.equals(l16) || !rc.canSenseRobotAtLocation(l16))) {
-            p16 = 1 + rc.senseRubble(l16) / 10.0;
+            p16 = 10.0 + rc.senseRubble(l16);
             if(v16 > v25 + p16) {
                 v16 = v25 + p16;
                 d16 = d25;
@@ -681,7 +665,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l32) && (target.equals(l32) || !rc.canSenseRobotAtLocation(l32))) {
-            p32 = 1 + rc.senseRubble(l32) / 10.0;
+            p32 = 10.0 + rc.senseRubble(l32);
             if(v32 > v42 + p32) {
                 v32 = v42 + p32;
                 d32 = d42;
@@ -696,7 +680,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l36) && (target.equals(l36) || !rc.canSenseRobotAtLocation(l36))) {
-            p36 = 1 + rc.senseRubble(l36) / 10.0;
+            p36 = 10.0 + rc.senseRubble(l36);
             if(v36 > v26 + p36) {
                 v36 = v26 + p36;
                 d36 = d26;
@@ -711,7 +695,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l52) && (target.equals(l52) || !rc.canSenseRobotAtLocation(l52))) {
-            p52 = 1 + rc.senseRubble(l52) / 10.0;
+            p52 = 10.0 + rc.senseRubble(l52);
             if(v52 > v44 + p52) {
                 v52 = v44 + p52;
                 d52 = d44;
@@ -726,7 +710,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l15) && (target.equals(l15) || !rc.canSenseRobotAtLocation(l15))) {
-            p15 = 1 + rc.senseRubble(l15) / 10.0;
+            p15 = 10.0 + rc.senseRubble(l15);
             if(v15 > v24 + p15) {
                 v15 = v24 + p15;
                 d15 = d24;
@@ -741,7 +725,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l17) && (target.equals(l17) || !rc.canSenseRobotAtLocation(l17))) {
-            p17 = 1 + rc.senseRubble(l17) / 10.0;
+            p17 = 10.0 + rc.senseRubble(l17);
             if(v17 > v26 + p17) {
                 v17 = v26 + p17;
                 d17 = d26;
@@ -756,7 +740,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l23) && (target.equals(l23) || !rc.canSenseRobotAtLocation(l23))) {
-            p23 = 1 + rc.senseRubble(l23) / 10.0;
+            p23 = 10.0 + rc.senseRubble(l23);
             if(v23 > v32 + p23) {
                 v23 = v32 + p23;
                 d23 = d32;
@@ -775,7 +759,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l27) && (target.equals(l27) || !rc.canSenseRobotAtLocation(l27))) {
-            p27 = 1 + rc.senseRubble(l27) / 10.0;
+            p27 = 10.0 + rc.senseRubble(l27);
             if(v27 > v36 + p27) {
                 v27 = v36 + p27;
                 d27 = d36;
@@ -794,7 +778,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l41) && (target.equals(l41) || !rc.canSenseRobotAtLocation(l41))) {
-            p41 = 1 + rc.senseRubble(l41) / 10.0;
+            p41 = 10.0 + rc.senseRubble(l41);
             if(v41 > v42 + p41) {
                 v41 = v42 + p41;
                 d41 = d42;
@@ -809,7 +793,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l45) && (target.equals(l45) || !rc.canSenseRobotAtLocation(l45))) {
-            p45 = 1 + rc.senseRubble(l45) / 10.0;
+            p45 = 10.0 + rc.senseRubble(l45);
             if(v45 > v36 + p45) {
                 v45 = v36 + p45;
                 d45 = d36;
@@ -824,7 +808,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l51) && (target.equals(l51) || !rc.canSenseRobotAtLocation(l51))) {
-            p51 = 1 + rc.senseRubble(l51) / 10.0;
+            p51 = 10.0 + rc.senseRubble(l51);
             if(v51 > v52 + p51) {
                 v51 = v52 + p51;
                 d51 = d52;
@@ -843,7 +827,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l53) && (target.equals(l53) || !rc.canSenseRobotAtLocation(l53))) {
-            p53 = 1 + rc.senseRubble(l53) / 10.0;
+            p53 = 10.0 + rc.senseRubble(l53);
             if(v53 > v45 + p53) {
                 v53 = v45 + p53;
                 d53 = d45;
@@ -862,7 +846,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l14) && (target.equals(l14) || !rc.canSenseRobotAtLocation(l14))) {
-            p14 = 1 + rc.senseRubble(l14) / 10.0;
+            p14 = 10.0 + rc.senseRubble(l14);
             if(v14 > v23 + p14) {
                 v14 = v23 + p14;
                 d14 = d23;
@@ -877,7 +861,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l18) && (target.equals(l18) || !rc.canSenseRobotAtLocation(l18))) {
-            p18 = 1 + rc.senseRubble(l18) / 10.0;
+            p18 = 10.0 + rc.senseRubble(l18);
             if(v18 > v27 + p18) {
                 v18 = v27 + p18;
                 d18 = d27;
@@ -892,7 +876,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l50) && (target.equals(l50) || !rc.canSenseRobotAtLocation(l50))) {
-            p50 = 1 + rc.senseRubble(l50) / 10.0;
+            p50 = 10.0 + rc.senseRubble(l50);
             if(v50 > v51 + p50) {
                 v50 = v51 + p50;
                 d50 = d51;
@@ -907,7 +891,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l54) && (target.equals(l54) || !rc.canSenseRobotAtLocation(l54))) {
-            p54 = 1 + rc.senseRubble(l54) / 10.0;
+            p54 = 10.0 + rc.senseRubble(l54);
             if(v54 > v45 + p54) {
                 v54 = v45 + p54;
                 d54 = d45;
@@ -922,7 +906,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l8) && (target.equals(l8) || !rc.canSenseRobotAtLocation(l8))) {
-            p8 = 1 + rc.senseRubble(l8) / 10.0;
+            p8 = 10.0 + rc.senseRubble(l8);
             if(v8 > v16 + p8) {
                 v8 = v16 + p8;
                 d8 = d16;
@@ -937,7 +921,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l31) && (target.equals(l31) || !rc.canSenseRobotAtLocation(l31))) {
-            p31 = 1 + rc.senseRubble(l31) / 10.0;
+            p31 = 10.0 + rc.senseRubble(l31);
             if(v31 > v41 + p31) {
                 v31 = v41 + p31;
                 d31 = d41;
@@ -952,7 +936,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l37) && (target.equals(l37) || !rc.canSenseRobotAtLocation(l37))) {
-            p37 = 1 + rc.senseRubble(l37) / 10.0;
+            p37 = 10.0 + rc.senseRubble(l37);
             if(v37 > v27 + p37) {
                 v37 = v27 + p37;
                 d37 = d27;
@@ -967,7 +951,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l60) && (target.equals(l60) || !rc.canSenseRobotAtLocation(l60))) {
-            p60 = 1 + rc.senseRubble(l60) / 10.0;
+            p60 = 10.0 + rc.senseRubble(l60);
             if(v60 > v53 + p60) {
                 v60 = v53 + p60;
                 d60 = d53;
@@ -982,7 +966,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l7) && (target.equals(l7) || !rc.canSenseRobotAtLocation(l7))) {
-            p7 = 1 + rc.senseRubble(l7) / 10.0;
+            p7 = 10.0 + rc.senseRubble(l7);
             if(v7 > v15 + p7) {
                 v7 = v15 + p7;
                 d7 = d15;
@@ -1001,7 +985,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l9) && (target.equals(l9) || !rc.canSenseRobotAtLocation(l9))) {
-            p9 = 1 + rc.senseRubble(l9) / 10.0;
+            p9 = 10.0 + rc.senseRubble(l9);
             if(v9 > v17 + p9) {
                 v9 = v17 + p9;
                 d9 = d17;
@@ -1020,7 +1004,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l22) && (target.equals(l22) || !rc.canSenseRobotAtLocation(l22))) {
-            p22 = 1 + rc.senseRubble(l22) / 10.0;
+            p22 = 10.0 + rc.senseRubble(l22);
             if(v22 > v31 + p22) {
                 v22 = v31 + p22;
                 d22 = d31;
@@ -1039,7 +1023,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l28) && (target.equals(l28) || !rc.canSenseRobotAtLocation(l28))) {
-            p28 = 1 + rc.senseRubble(l28) / 10.0;
+            p28 = 10.0 + rc.senseRubble(l28);
             if(v28 > v37 + p28) {
                 v28 = v37 + p28;
                 d28 = d37;
@@ -1058,7 +1042,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l40) && (target.equals(l40) || !rc.canSenseRobotAtLocation(l40))) {
-            p40 = 1 + rc.senseRubble(l40) / 10.0;
+            p40 = 10.0 + rc.senseRubble(l40);
             if(v40 > v50 + p40) {
                 v40 = v50 + p40;
                 d40 = d50;
@@ -1077,7 +1061,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l46) && (target.equals(l46) || !rc.canSenseRobotAtLocation(l46))) {
-            p46 = 1 + rc.senseRubble(l46) / 10.0;
+            p46 = 10.0 + rc.senseRubble(l46);
             if(v46 > v37 + p46) {
                 v46 = v37 + p46;
                 d46 = d37;
@@ -1096,7 +1080,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l59) && (target.equals(l59) || !rc.canSenseRobotAtLocation(l59))) {
-            p59 = 1 + rc.senseRubble(l59) / 10.0;
+            p59 = 10.0 + rc.senseRubble(l59);
             if(v59 > v60 + p59) {
                 v59 = v60 + p59;
                 d59 = d60;
@@ -1115,7 +1099,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l61) && (target.equals(l61) || !rc.canSenseRobotAtLocation(l61))) {
-            p61 = 1 + rc.senseRubble(l61) / 10.0;
+            p61 = 10.0 + rc.senseRubble(l61);
             if(v61 > v54 + p61) {
                 v61 = v54 + p61;
                 d61 = d54;
@@ -1134,7 +1118,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l6) && (target.equals(l6) || !rc.canSenseRobotAtLocation(l6))) {
-            p6 = 1 + rc.senseRubble(l6) / 10.0;
+            p6 = 10.0 + rc.senseRubble(l6);
             if(v6 > v14 + p6) {
                 v6 = v14 + p6;
                 d6 = d14;
@@ -1149,7 +1133,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l10) && (target.equals(l10) || !rc.canSenseRobotAtLocation(l10))) {
-            p10 = 1 + rc.senseRubble(l10) / 10.0;
+            p10 = 10.0 + rc.senseRubble(l10);
             if(v10 > v18 + p10) {
                 v10 = v18 + p10;
                 d10 = d18;
@@ -1164,7 +1148,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l13) && (target.equals(l13) || !rc.canSenseRobotAtLocation(l13))) {
-            p13 = 1 + rc.senseRubble(l13) / 10.0;
+            p13 = 10.0 + rc.senseRubble(l13);
             if(v13 > v22 + p13) {
                 v13 = v22 + p13;
                 d13 = d22;
@@ -1183,7 +1167,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l19) && (target.equals(l19) || !rc.canSenseRobotAtLocation(l19))) {
-            p19 = 1 + rc.senseRubble(l19) / 10.0;
+            p19 = 10.0 + rc.senseRubble(l19);
             if(v19 > v28 + p19) {
                 v19 = v28 + p19;
                 d19 = d28;
@@ -1202,7 +1186,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l49) && (target.equals(l49) || !rc.canSenseRobotAtLocation(l49))) {
-            p49 = 1 + rc.senseRubble(l49) / 10.0;
+            p49 = 10.0 + rc.senseRubble(l49);
             if(v49 > v50 + p49) {
                 v49 = v50 + p49;
                 d49 = d50;
@@ -1217,7 +1201,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l55) && (target.equals(l55) || !rc.canSenseRobotAtLocation(l55))) {
-            p55 = 1 + rc.senseRubble(l55) / 10.0;
+            p55 = 10.0 + rc.senseRubble(l55);
             if(v55 > v46 + p55) {
                 v55 = v46 + p55;
                 d55 = d46;
@@ -1232,7 +1216,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l58) && (target.equals(l58) || !rc.canSenseRobotAtLocation(l58))) {
-            p58 = 1 + rc.senseRubble(l58) / 10.0;
+            p58 = 10.0 + rc.senseRubble(l58);
             if(v58 > v59 + p58) {
                 v58 = v59 + p58;
                 d58 = d59;
@@ -1251,7 +1235,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l62) && (target.equals(l62) || !rc.canSenseRobotAtLocation(l62))) {
-            p62 = 1 + rc.senseRubble(l62) / 10.0;
+            p62 = 10.0 + rc.senseRubble(l62);
             if(v62 > v55 + p62) {
                 v62 = v55 + p62;
                 d62 = d55;
@@ -1270,7 +1254,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l2) && (target.equals(l2) || !rc.canSenseRobotAtLocation(l2))) {
-            p2 = 1 + rc.senseRubble(l2) / 10.0;
+            p2 = 10.0 + rc.senseRubble(l2);
             if(v2 > v8 + p2) {
                 v2 = v8 + p2;
                 d2 = d8;
@@ -1285,7 +1269,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l30) && (target.equals(l30) || !rc.canSenseRobotAtLocation(l30))) {
-            p30 = 1 + rc.senseRubble(l30) / 10.0;
+            p30 = 10.0 + rc.senseRubble(l30);
             if(v30 > v40 + p30) {
                 v30 = v40 + p30;
                 d30 = d40;
@@ -1300,7 +1284,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l38) && (target.equals(l38) || !rc.canSenseRobotAtLocation(l38))) {
-            p38 = 1 + rc.senseRubble(l38) / 10.0;
+            p38 = 10.0 + rc.senseRubble(l38);
             if(v38 > v28 + p38) {
                 v38 = v28 + p38;
                 d38 = d28;
@@ -1315,7 +1299,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l66) && (target.equals(l66) || !rc.canSenseRobotAtLocation(l66))) {
-            p66 = 1 + rc.senseRubble(l66) / 10.0;
+            p66 = 10.0 + rc.senseRubble(l66);
             if(v66 > v61 + p66) {
                 v66 = v61 + p66;
                 d66 = d61;
@@ -1330,7 +1314,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l1) && (target.equals(l1) || !rc.canSenseRobotAtLocation(l1))) {
-            p1 = 1 + rc.senseRubble(l1) / 10.0;
+            p1 = 10.0 + rc.senseRubble(l1);
             if(v1 > v7 + p1) {
                 v1 = v7 + p1;
                 d1 = d7;
@@ -1349,7 +1333,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l3) && (target.equals(l3) || !rc.canSenseRobotAtLocation(l3))) {
-            p3 = 1 + rc.senseRubble(l3) / 10.0;
+            p3 = 10.0 + rc.senseRubble(l3);
             if(v3 > v9 + p3) {
                 v3 = v9 + p3;
                 d3 = d9;
@@ -1368,7 +1352,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l21) && (target.equals(l21) || !rc.canSenseRobotAtLocation(l21))) {
-            p21 = 1 + rc.senseRubble(l21) / 10.0;
+            p21 = 10.0 + rc.senseRubble(l21);
             if(v21 > v30 + p21) {
                 v21 = v30 + p21;
                 d21 = d30;
@@ -1387,7 +1371,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l29) && (target.equals(l29) || !rc.canSenseRobotAtLocation(l29))) {
-            p29 = 1 + rc.senseRubble(l29) / 10.0;
+            p29 = 10.0 + rc.senseRubble(l29);
             if(v29 > v38 + p29) {
                 v29 = v38 + p29;
                 d29 = d38;
@@ -1406,7 +1390,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l39) && (target.equals(l39) || !rc.canSenseRobotAtLocation(l39))) {
-            p39 = 1 + rc.senseRubble(l39) / 10.0;
+            p39 = 10.0 + rc.senseRubble(l39);
             if(v39 > v49 + p39) {
                 v39 = v49 + p39;
                 d39 = d49;
@@ -1425,7 +1409,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l47) && (target.equals(l47) || !rc.canSenseRobotAtLocation(l47))) {
-            p47 = 1 + rc.senseRubble(l47) / 10.0;
+            p47 = 10.0 + rc.senseRubble(l47);
             if(v47 > v38 + p47) {
                 v47 = v38 + p47;
                 d47 = d38;
@@ -1444,7 +1428,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l65) && (target.equals(l65) || !rc.canSenseRobotAtLocation(l65))) {
-            p65 = 1 + rc.senseRubble(l65) / 10.0;
+            p65 = 10.0 + rc.senseRubble(l65);
             if(v65 > v66 + p65) {
                 v65 = v66 + p65;
                 d65 = d66;
@@ -1463,7 +1447,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l67) && (target.equals(l67) || !rc.canSenseRobotAtLocation(l67))) {
-            p67 = 1 + rc.senseRubble(l67) / 10.0;
+            p67 = 10.0 + rc.senseRubble(l67);
             if(v67 > v62 + p67) {
                 v67 = v62 + p67;
                 d67 = d62;
@@ -1482,7 +1466,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l5) && (target.equals(l5) || !rc.canSenseRobotAtLocation(l5))) {
-            p5 = 1 + rc.senseRubble(l5) / 10.0;
+            p5 = 10.0 + rc.senseRubble(l5);
             if(v5 > v13 + p5) {
                 v5 = v13 + p5;
                 d5 = d13;
@@ -1497,7 +1481,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l11) && (target.equals(l11) || !rc.canSenseRobotAtLocation(l11))) {
-            p11 = 1 + rc.senseRubble(l11) / 10.0;
+            p11 = 10.0 + rc.senseRubble(l11);
             if(v11 > v19 + p11) {
                 v11 = v19 + p11;
                 d11 = d19;
@@ -1512,7 +1496,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l57) && (target.equals(l57) || !rc.canSenseRobotAtLocation(l57))) {
-            p57 = 1 + rc.senseRubble(l57) / 10.0;
+            p57 = 10.0 + rc.senseRubble(l57);
             if(v57 > v58 + p57) {
                 v57 = v58 + p57;
                 d57 = d58;
@@ -1527,7 +1511,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l63) && (target.equals(l63) || !rc.canSenseRobotAtLocation(l63))) {
-            p63 = 1 + rc.senseRubble(l63) / 10.0;
+            p63 = 10.0 + rc.senseRubble(l63);
             if(v63 > v55 + p63) {
                 v63 = v55 + p63;
                 d63 = d55;
@@ -1542,7 +1526,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l0) && (target.equals(l0) || !rc.canSenseRobotAtLocation(l0))) {
-            p0 = 1 + rc.senseRubble(l0) / 10.0;
+            p0 = 10.0 + rc.senseRubble(l0);
             if(v0 > v6 + p0) {
                 v0 = v6 + p0;
                 d0 = d6;
@@ -1561,7 +1545,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l4) && (target.equals(l4) || !rc.canSenseRobotAtLocation(l4))) {
-            p4 = 1 + rc.senseRubble(l4) / 10.0;
+            p4 = 10.0 + rc.senseRubble(l4);
             if(v4 > v10 + p4) {
                 v4 = v10 + p4;
                 d4 = d10;
@@ -1580,7 +1564,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l12) && (target.equals(l12) || !rc.canSenseRobotAtLocation(l12))) {
-            p12 = 1 + rc.senseRubble(l12) / 10.0;
+            p12 = 10.0 + rc.senseRubble(l12);
             if(v12 > v21 + p12) {
                 v12 = v21 + p12;
                 d12 = d21;
@@ -1599,7 +1583,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l20) && (target.equals(l20) || !rc.canSenseRobotAtLocation(l20))) {
-            p20 = 1 + rc.senseRubble(l20) / 10.0;
+            p20 = 10.0 + rc.senseRubble(l20);
             if(v20 > v29 + p20) {
                 v20 = v29 + p20;
                 d20 = d29;
@@ -1618,7 +1602,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l48) && (target.equals(l48) || !rc.canSenseRobotAtLocation(l48))) {
-            p48 = 1 + rc.senseRubble(l48) / 10.0;
+            p48 = 10.0 + rc.senseRubble(l48);
             if(v48 > v57 + p48) {
                 v48 = v57 + p48;
                 d48 = d57;
@@ -1637,7 +1621,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l56) && (target.equals(l56) || !rc.canSenseRobotAtLocation(l56))) {
-            p56 = 1 + rc.senseRubble(l56) / 10.0;
+            p56 = 10.0 + rc.senseRubble(l56);
             if(v56 > v47 + p56) {
                 v56 = v47 + p56;
                 d56 = d47;
@@ -1656,7 +1640,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l64) && (target.equals(l64) || !rc.canSenseRobotAtLocation(l64))) {
-            p64 = 1 + rc.senseRubble(l64) / 10.0;
+            p64 = 10.0 + rc.senseRubble(l64);
             if(v64 > v65 + p64) {
                 v64 = v65 + p64;
                 d64 = d65;
@@ -1675,7 +1659,7 @@ public class BFSDroid extends BFS {
             }
         }
         if(rc.onTheMap(l68) && (target.equals(l68) || !rc.canSenseRobotAtLocation(l68))) {
-            p68 = 1 + rc.senseRubble(l68) / 10.0;
+            p68 = 10.0 + rc.senseRubble(l68);
             if(v68 > v63 + p68) {
                 v68 = v63 + p68;
                 d68 = d63;
