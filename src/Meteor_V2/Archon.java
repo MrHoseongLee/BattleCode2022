@@ -6,6 +6,7 @@ public strictfp class Archon extends Building {
 
     private int minerCnt = 0;
     private boolean dead = false;
+    private MapLocation repairTarget = null;
 
     private final int archonIdx;
 
@@ -36,7 +37,7 @@ public strictfp class Archon extends Building {
                 int state = decodeID(code);
                 MapLocation location = decodeLocation(code);
 
-                if (state <= 1) { minimap.reportEnemy(location, state + 1); }
+                if (rc.getRoundNum() >= 150 * n && state <= 1) { minimap.reportEnemy(location, state + 1); }
             }
         }
 
@@ -48,6 +49,8 @@ public strictfp class Archon extends Building {
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
 
         minimap.reportNearbyEnemies(nearbyRobots);
+
+        findRepairTarget();
 
         if (lead <= 500) {
             for (RobotInfo robot : nearbyRobots) {
@@ -69,12 +72,13 @@ public strictfp class Archon extends Building {
             else if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
                 if (lead >= 75 * countLivingTeamArchonsAfter(archonIdx) || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
-                    int k = Math.min(4, rc.getRoundNum() / 50);
-                    if (lead >= 1000 || RNG.nextInt(10) < 5 + k) { buildDroid(RobotType.SOLDIER); }
+                    int k = Math.min(3, rc.getRoundNum() / 50);
+                    if (lead >= 1000 || RNG.nextInt(10) < 6 + k) { buildDroid(RobotType.SOLDIER); }
                     else { buildDroid(RobotType.MINER); }
                     rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
                 }
             }
+            if (repairTarget != null && rc.canRepair(repairTarget)) rc.repair(repairTarget);
         }
     }
 
@@ -134,6 +138,23 @@ public strictfp class Archon extends Building {
                     break;
                 }
             }
+        }
+    }
+
+    private void findRepairTarget() {
+        int minHealth = INF;
+        repairTarget = null;
+
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20, rc.getTeam());
+
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getType().isBuilding()) continue;
+            if (robot.getHealth() == robot.getType().getMaxHealth(1)) continue;
+
+            int health = robot.getHealth();
+            if (robot.getType() == RobotType.SOLDIER) health -= 50;
+
+            if(health < minHealth) { minHealth = health; repairTarget = robot.location; }
         }
     }
 }

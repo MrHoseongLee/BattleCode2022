@@ -25,8 +25,13 @@ public strictfp class Droid extends Robot {
     }
 
     protected void move() throws GameActionException {
-        if (moved) { return; }
-        bfs.move(target, evading);
+        if (moved || !rc.isMovementReady()) return;
+
+        int rubbleTolerance = 100;
+        if (evading) rubbleTolerance = 10;
+        else if (minimap.getLevel(target) >= 3) rubbleTolerance = Math.max((int)Math.sqrt(currentLocation.distanceSquaredTo(target)) * 5, 20);
+
+        bfs.move(target, rubbleTolerance);
         moved = true;
     }
 
@@ -34,15 +39,16 @@ public strictfp class Droid extends Robot {
         return currentLocation.distanceSquaredTo(location) <= 10;
     }
 
-    protected void updateTargetForEvasion(MapLocation location) {
-        int maxDistance = 0;
-
-        for (Direction direction : directions) {
-            MapLocation evadingLocation = currentLocation.add(direction).add(direction);
-            if (evadingLocation.x < 0 || evadingLocation.x >= rc.getMapWidth() || evadingLocation.y < 0 || evadingLocation.y >= rc.getMapHeight()) continue;
-            int distance = location.distanceSquaredTo(evadingLocation);
-            if (distance > maxDistance) {
-                maxDistance = distance;
+    protected void updateTargetForEvasion(MapLocation location) throws GameActionException {
+        int minRubble = INF;
+        int currentDistance = currentLocation.distanceSquaredTo(location);
+        for(Direction direction : directions) {
+            MapLocation evadingLocation = currentLocation.add(direction);
+            if(evadingLocation.x < 0 || evadingLocation.x >= rc.getMapWidth() || evadingLocation.y < 0 || evadingLocation.y >= rc.getMapHeight()) continue;
+            if(evadingLocation.distanceSquaredTo(location) <= currentDistance) continue;
+            int rubble = rc.senseRubble(evadingLocation);
+            if(rubble < minRubble) {
+                minRubble = rubble;
                 target = evadingLocation;
                 evading = true;
             }
@@ -61,12 +67,12 @@ public strictfp class Droid extends Robot {
             if (!rc.canSenseLocation(location)) { continue; }
             if (state >= 2) { continue; }
 
-            if (isThereRobotTypeAt(location, RobotType.ARCHON) && isRobotOnSameTeam(rc.senseRobotAtLocation(location))) {
+            if (isThereRobotTypeAt(location, RobotType.ARCHON) && !isRobotOnSameTeam(rc.senseRobotAtLocation(location))) {
                 if (state == 0) {
                     rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(location, 1));
                     System.out.println("An enemy archon is at " + location);
                 }
-            } 
+            }
 
             else {
                 rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(location, state + 2));

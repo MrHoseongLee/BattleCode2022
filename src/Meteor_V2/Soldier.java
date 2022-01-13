@@ -26,17 +26,17 @@ public strictfp class Soldier extends Droid {
         if (target != null && currentLocation.distanceSquaredTo(target) <= 2) { target = null; }
 
         if (target != null && rc.canSenseLocation(target)) {
-            if (rc.senseRubble(target) >= rc.senseRubble(currentLocation) + 5) target = null;
+            if (rc.senseRubble(target) > rc.senseRubble(currentLocation) + 10) target = null;
         }
 
         // Move to attack target
-        if (attackTarget != null) {
+        if (attackTarget != null && (rc.senseRobotAtLocation(attackTarget).getType() != RobotType.SOLDIER || countEnemySoldier(nearbyRobots) <= 1)) {
             target = attackTarget;
             movingToRandomTarget = false;
         }
 
         MapLocation enemy = minimap.getClosestEnemy();
-        if (enemy != null && (target == null || currentLocation.distanceSquaredTo(target) >= 40)) {
+        if (enemy != null && (target == null || currentLocation.distanceSquaredTo(target) >= 40 || minimap.getLevel(target) < minimap.getLevel(enemy))) {
             target = enemy;
             movingToRandomTarget = false;
         }
@@ -45,10 +45,12 @@ public strictfp class Soldier extends Droid {
             movingToRandomTarget = true;
         }
 
+        if (attackTarget != null) evading = true;
+
         MapLocation closest = getClosestEnemySoldier(nearbyRobots);
         if (closest != null && !closest.equals(attackTarget) && currentLocation.distanceSquaredTo(closest) < 13) {
-            if (rc.canAttack(closest)) rc.attack(closest);
             updateTargetForEvasion(closest);
+            if (rc.canAttack(closest)) rc.attack(closest);
             move();
         }
 
@@ -58,7 +60,7 @@ public strictfp class Soldier extends Droid {
                 move();
                 if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
             } else {
-                updateTargetForEvasion(attackTarget);
+                if (rc.senseRobotAtLocation(attackTarget).getType() != RobotType.MINER) updateTargetForEvasion(attackTarget);
                 rc.attack(attackTarget);
             }
         }
@@ -79,7 +81,7 @@ public strictfp class Soldier extends Droid {
 
             int health = robot.getHealth();
             if(robot.getType() == RobotType.SOLDIER) { health -= 50; }
-            if(robot.getType() == RobotType.ARCHON) { health -= 500; }
+            if(robot.getType() == RobotType.ARCHON) { health -= 100; }
 
             if(health < minHealth) {
                 minHealth = health;
@@ -103,7 +105,7 @@ public strictfp class Soldier extends Droid {
 
         for(RobotInfo robot : nearbyRobots) {
             if (robot.getTeam() == rc.getTeam()) continue;
-            if (robot.getType() != RobotType.SOLDIER) continue;
+            if (robot.getType() != RobotType.SOLDIER && robot.getType() != RobotType.ARCHON) continue;
 
             int distance = currentLocation.distanceSquaredTo(robot.location);
 

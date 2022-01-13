@@ -41,7 +41,8 @@ public strictfp class Miner extends Droid {
     private void updateTarget() throws GameActionException {
         if (currentLocation.equals(target)) target = null;
         if (target != null && isThereFriendlyMiner(target)) target = null;
-        if (target != null && rc.canSenseLocation(target) && rc.senseRubble(target) <= 1) target = null;
+        if (target != null && rc.canSenseLocation(target) && (rc.senseLead(target) <= 1 || rc.senseRubble(target) > rc.senseRubble(currentLocation) + 10)) target = null;
+        if (target != null && minimap.getLevel(target) >= 3) target = null;
 
         /*int maxValue = 0;
         if (target != null && currentLocation.distanceSquaredTo(target) <= 13) maxValue = getValue(target);

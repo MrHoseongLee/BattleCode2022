@@ -37,7 +37,7 @@ public class Minimap {
     void reportEnemy(MapLocation loc, int level) throws GameActionException {
         int r = loc.y / GRID_SIZE, c = loc.x / GRID_SIZE;
         int k = r * GRID_COLUMN + c;
-        int x = rc.readSharedArray(32 + k/8);
+        int x = rc.readSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX));
         rc.writeSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX), x | (level << ((k%8)*2)));
     }
 
@@ -70,5 +70,12 @@ public class Minimap {
             }
         }
         return enemy;
+    }
+
+    int getLevel(MapLocation loc) throws GameActionException {
+        int r = loc.y / GRID_SIZE, c = loc.x / GRID_SIZE;
+        int k = r * GRID_COLUMN + c;
+        int x = rc.readSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 0 ? 0 : GRID_MAX_IDX));
+        return (x >> ((k%8)*2)) & 0b11;
     }
 }
