@@ -45,6 +45,7 @@ public strictfp class Droid extends Robot {
         for(Direction direction : directions) {
             MapLocation evadingLocation = currentLocation.add(direction);
             if(evadingLocation.x < 0 || evadingLocation.x >= rc.getMapWidth() || evadingLocation.y < 0 || evadingLocation.y >= rc.getMapHeight()) continue;
+            if(rc.canSenseLocation(evadingLocation) && rc.canSenseRobotAtLocation(evadingLocation)) continue;
             if(evadingLocation.distanceSquaredTo(location) <= currentDistance) continue;
             int rubble = rc.senseRubble(evadingLocation);
             if(rubble < minRubble) {

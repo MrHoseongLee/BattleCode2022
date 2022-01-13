@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 public strictfp class Miner extends Droid {
 
+    private boolean movingToParentArchon = false;
+
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -11,6 +13,13 @@ public strictfp class Miner extends Droid {
     public void step() throws GameActionException {
         super.step();
         updateTarget();
+
+        if (rc.getHealth() <= 30) movingToParentArchon = true;
+        if (rc.getHealth() >= 40) movingToParentArchon = false;
+        else if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) movingToParentArchon = true;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;
+
+        if (movingToParentArchon) target = parentArchonLocation;
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
 
@@ -33,7 +42,7 @@ public strictfp class Miner extends Droid {
 
         move();
 
-        if (Clock.getBytecodesLeft() >= 1000) checkEnemyArchon();
+        if (Clock.getBytecodesLeft() >= 2000) checkEnemyArchon();
 
         super.draw();
     }
@@ -42,7 +51,7 @@ public strictfp class Miner extends Droid {
         if (currentLocation.equals(target)) target = null;
         if (target != null && isThereFriendlyMiner(target)) target = null;
         if (target != null && rc.canSenseLocation(target) && (rc.senseLead(target) <= 1 || rc.senseRubble(target) > rc.senseRubble(currentLocation) + 10)) target = null;
-        if (target != null && minimap.getLevel(target) >= 3) target = null;
+        //if (target != null && minimap.getLevel(target) >= 3) target = null;
 
         /*int maxValue = 0;
         if (target != null && currentLocation.distanceSquaredTo(target) <= 13) maxValue = getValue(target);

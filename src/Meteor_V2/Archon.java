@@ -37,7 +37,7 @@ public strictfp class Archon extends Building {
                 int state = decodeID(code);
                 MapLocation location = decodeLocation(code);
 
-                if (rc.getRoundNum() >= 150 * n && state <= 1) { minimap.reportEnemy(location, state + 1); }
+                if (state <= 1) { minimap.reportEnemy(location, 1); }
             }
         }
 
@@ -52,17 +52,21 @@ public strictfp class Archon extends Building {
 
         findRepairTarget();
 
+        boolean underAttack = false;
+
         if (lead <= 500) {
             for (RobotInfo robot : nearbyRobots) {
-                if (robot.getType() == RobotType.SOLDIER && !isRobotOnSameTeam(robot)) {
-                    buildDroid(RobotType.SOLDIER);
+                if (!isRobotOnSameTeam(robot)) {
+                    underAttack = true;
+                    minimap.reportEnemy(currentLocation, 3);
                     break;
                 }
             }
         }
 
         if (rc.isActionReady()) {
-            if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (180 * n)) {
+            if (underAttack) buildDroid(RobotType.SOLDIER);
+            else if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (180 * n)) {
                 if (lead >= 50 * countLivingTeamArchonsAfter(archonIdx) || (lead >= 50 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
                     buildDroid(RobotType.MINER);
                     minerCnt += 1;
@@ -72,14 +76,15 @@ public strictfp class Archon extends Building {
             else if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
             else if (lead >= 75) {
                 if (lead >= 75 * countLivingTeamArchonsAfter(archonIdx) || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
-                    int k = Math.min(3, rc.getRoundNum() / 50);
+                    int k = 2; //Math.min(3, rc.getRoundNum() / 50);
                     if (lead >= 1000 || RNG.nextInt(10) < 6 + k) { buildDroid(RobotType.SOLDIER); }
                     else { buildDroid(RobotType.MINER); }
                     rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
                 }
             }
-            if (repairTarget != null && rc.canRepair(repairTarget)) rc.repair(repairTarget);
         }
+
+        if (repairTarget != null && rc.canRepair(repairTarget)) rc.repair(repairTarget);
     }
 
     private void buildDroid(RobotType robotType) throws GameActionException {
@@ -145,9 +150,10 @@ public strictfp class Archon extends Building {
         int minHealth = INF;
         repairTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20, rc.getTeam());
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20);
 
         for (RobotInfo robot : nearbyRobots) {
+            if (robot.getTeam() != rc.getTeam()) continue;
             if (robot.getType().isBuilding()) continue;
             if (robot.getHealth() == robot.getType().getMaxHealth(1)) continue;
 

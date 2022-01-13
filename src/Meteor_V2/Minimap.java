@@ -29,8 +29,7 @@ public class Minimap {
                 if(level == 2) rc.setIndicatorDot(new MapLocation(x, y), 255, 153, 51);
                 if(level == 3) rc.setIndicatorDot(new MapLocation(x, y), 255, 80, 80);
             }
-            if (rc.getRoundNum() % 2 == 1) rc.writeSharedArray(32 + i, 0);
-            else rc.writeSharedArray(32 + i + GRID_MAX_IDX, 0);
+            rc.writeSharedArray(32 + i + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX), 0);
         }
     }
 
@@ -38,14 +37,17 @@ public class Minimap {
         int r = loc.y / GRID_SIZE, c = loc.x / GRID_SIZE;
         int k = r * GRID_COLUMN + c;
         int x = rc.readSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX));
+        if(((x >> ((k%8)*2)) & 0b11) >= level) return;
+        x &= ~(0b11 << ((k%8)*2));
         rc.writeSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX), x | (level << ((k%8)*2)));
     }
 
     void reportNearbyEnemies(RobotInfo[] nearbyRobots) throws GameActionException {
+        boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 150;
         for(RobotInfo robot : nearbyRobots) {
             if(robot.getTeam() == rc.getTeam()) continue;
-            if(robot.getType() == RobotType.MINER) reportEnemy(robot.location, 2);
-            if(robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) reportEnemy(robot.location, 3);
+            if(robot.getType() == RobotType.MINER) reportEnemy(robot.location, attacking ? 2 : 3);
+            if(robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) reportEnemy(robot.location, attacking ? 3 : 2);
         }
     }
 
