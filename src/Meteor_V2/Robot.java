@@ -17,7 +17,7 @@ public class Robot {
     protected BFS bfs; // TODO change to final if BFSBuilding is made
     protected final Minimap minimap;
 
-    private final Team team;
+    protected final Team team;
 
     protected MapLocation currentLocation;
     protected MapLocation previousLocation;
@@ -55,6 +55,7 @@ public class Robot {
     public void step() throws GameActionException {
         previousLocation = (rc.getLocation().equals(currentLocation)) ? previousLocation : currentLocation;
         currentLocation = rc.getLocation();
+        minimap.updateInfo();
     }
 
     protected void move() throws GameActionException {

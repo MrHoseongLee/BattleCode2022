@@ -6,8 +6,8 @@ public abstract class Idx {
     static final int enemyArchonDataOffset = 2;
     static final int teamArchonDataOffset = 6;
     static final int teamSoldierTargetOffset = 10;
-    static final int teamMinerCountOffset = 14;
     static final int watchTowerCount = 18;
     static final int nextArchonToBuild = 19;
     static final int enemyArchonLocationOffset = 20;
+    static final int minimapOffset = 32;
 }

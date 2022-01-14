@@ -4,80 +4,117 @@ import battlecode.common.*;
 
 public class Minimap {
 
-    final int GRID_SIZE, GRID_ROW, GRID_COLUMN, GRID_MAX_IDX;
+    private final int GRID_SIZE, GRID_ROW, GRID_COLUMN, GRID_MAX_IDX;
 
-    RobotController rc;
+    private final RobotController rc;
+    private final Team team;
 
-    Minimap(RobotController rc) {
+    private final int width;
+    private final int height;
+
+    private int currentX;
+    private int currentY;
+    private int roundNumber;
+
+    public Minimap(RobotController rc) {
         this.rc = rc;
 
-        GRID_SIZE = (int) Math.ceil(Math.sqrt(rc.getMapHeight() * rc.getMapWidth() / 128.0)) + 3;
+        team = rc.getTeam();
+
+        width = rc.getMapWidth();
+        height = rc.getMapHeight();
+
+        GRID_SIZE = (int) Math.ceil(Math.sqrt(width * height / 128.0)) + 3;
         GRID_ROW = (rc.getMapHeight() - 1) / GRID_SIZE + 1;
         GRID_COLUMN = (rc.getMapWidth() - 1) / GRID_SIZE + 1;
         GRID_MAX_IDX = (GRID_ROW * GRID_COLUMN - 1) / 8 + 1; // max 13
     }
 
-    void initTurn() throws GameActionException {
+    public void reset() throws GameActionException {
         for (int i = 0; i < GRID_MAX_IDX; ++i) {
-            for(int j=0; j<8; ++j) {
-                int level = (rc.readSharedArray(i + 32 + (rc.getRoundNum() % 2 == 0 ? 0 : GRID_MAX_IDX)) >> (j*2)) & 0b11;
-                if(level == 0) continue;
+            for (int j = 0; j < 8; ++j) {
+
+                int level = (rc.readSharedArray(i + Idx.minimapOffset + parity(false)) >> (j*2)) & 0b11;
+
+                if (level == 0) { continue; }
 
                 int r = (i*8 + j) / GRID_COLUMN, c = (i*8 + j) % GRID_COLUMN;
                 int x = c * GRID_SIZE + GRID_SIZE / 2, y = r * GRID_SIZE + GRID_SIZE / 2;
-                if(level == 1) rc.setIndicatorDot(new MapLocation(x, y), 255, 255, 0);
-                if(level == 2) rc.setIndicatorDot(new MapLocation(x, y), 255, 153, 51);
-                if(level == 3) rc.setIndicatorDot(new MapLocation(x, y), 255, 80, 80);
+
+                if (level == 1) { rc.setIndicatorDot(new MapLocation(x, y), 255, 255, 0);  }
+                if (level == 2) { rc.setIndicatorDot(new MapLocation(x, y), 255, 153, 51); }
+                if (level == 3) { rc.setIndicatorDot(new MapLocation(x, y), 255, 80, 80);  }
             }
-            rc.writeSharedArray(32 + i + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX), 0);
+
+            rc.writeSharedArray(Idx.minimapOffset + i + parity(true), 0);
         }
     }
 
-    void reportEnemy(MapLocation loc, int level) throws GameActionException {
-        int r = loc.y / GRID_SIZE, c = loc.x / GRID_SIZE;
-        int k = r * GRID_COLUMN + c;
-        int x = rc.readSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX));
-        if(((x >> ((k%8)*2)) & 0b11) >= level) return;
-        x &= ~(0b11 << ((k%8)*2));
-        rc.writeSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 1 ? 0 : GRID_MAX_IDX), x | (level << ((k%8)*2)));
+    public void updateInfo() {
+        roundNumber = rc.getRoundNum();
+        currentX = rc.getLocation().x;
+        currentY = rc.getLocation().y;
     }
 
-    void reportNearbyEnemies(RobotInfo[] nearbyRobots) throws GameActionException {
-        boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 150;
-        for(RobotInfo robot : nearbyRobots) {
-            if(robot.getTeam() == rc.getTeam()) continue;
-            if(robot.getType() == RobotType.MINER) reportEnemy(robot.location, attacking ? 2 : 3);
-            if(robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) reportEnemy(robot.location, attacking ? 3 : 2);
+    public void reportEnemy(MapLocation location, int level) throws GameActionException {
+        int k = (location.y / GRID_SIZE) * GRID_COLUMN + (location.x / GRID_SIZE);
+        int x = rc.readSharedArray(Idx.minimapOffset + k/8 + parity(true));
+
+        if (((x >> ((k%8)*2)) & 0b11) >= level) { return; }
+        x &= ~(0b11 << ((k%8)*2));
+
+        rc.writeSharedArray(Idx.minimapOffset + k/8 + parity(true), x | (level << ((k%8)*2)));
+    }
+
+    public void reportNearbyEnemies(RobotInfo[] nearbyRobots) throws GameActionException {
+        boolean attacking = roundNumber >= rc.readSharedArray(Idx.teamArchonCount) * 150;
+
+        for (RobotInfo robot : nearbyRobots) {
+            if (robot.getTeam() == team) { continue; }
+            if (robot.getType() == RobotType.MINER) { reportEnemy(robot.location, attacking ? 2 : 3); }
+            if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) { reportEnemy(robot.location, attacking ? 3 : 2); }
         }
     }
 
     MapLocation getClosestEnemy() throws GameActionException {
-        int minDistance = 0x3f3f3f3f;
+        int minDistance = 0x3F3F3F3F;
         int maxLevel = 0;
-        MapLocation enemy = null;
+        MapLocation closestEnemy = null;
 
-        for(int i=0; i<GRID_MAX_IDX; ++i) {
-            for(int j=0; j<8; ++j) {
-                int level = (rc.readSharedArray(i + 32 + (rc.getRoundNum() % 2 == 0 ? 0 : GRID_MAX_IDX)) >> (j*2)) & 0b11;
-                if(level == 0) continue;
+        for (int i=0; i < GRID_MAX_IDX; ++i) {
+            for (int j=0; j < 8; ++j) {
+                int level = (rc.readSharedArray(i + Idx.minimapOffset + parity(false)) >> (j*2)) & 0b11;
+
+                if(level == 0) { continue; }
 
                 int r = (i*8 + j) / GRID_COLUMN, c = (i*8 + j) % GRID_COLUMN;
-                int x = Math.min(c * GRID_SIZE + GRID_SIZE / 2, rc.getMapWidth() - 1), y = Math.min(r * GRID_SIZE + GRID_SIZE / 2, rc.getMapHeight() - 1);
-                int distance = Math.max(Math.abs(x - rc.getLocation().x), Math.abs(y - rc.getLocation().y));
+                int x = Math.min(c * GRID_SIZE + GRID_SIZE / 2, width - 1), y = Math.min(r * GRID_SIZE + GRID_SIZE / 2, height - 1);
+                int distance = distanceTo(x, y);
+
                 if(level > maxLevel || (level == maxLevel && distance < minDistance)) {
                     maxLevel = level;
                     minDistance = distance;
-                    enemy = new MapLocation(x, y);
+                    closestEnemy = new MapLocation(x, y);
                 }
             }
         }
-        return enemy;
+
+        return closestEnemy;
     }
 
-    int getLevel(MapLocation loc) throws GameActionException {
-        int r = loc.y / GRID_SIZE, c = loc.x / GRID_SIZE;
+    public int getLevel(MapLocation location) throws GameActionException {
+        int r = location.y / GRID_SIZE, c = location.x / GRID_SIZE;
         int k = r * GRID_COLUMN + c;
-        int x = rc.readSharedArray(32 + k/8 + (rc.getRoundNum() % 2 == 0 ? 0 : GRID_MAX_IDX));
+        int x = rc.readSharedArray(Idx.minimapOffset + k/8 + parity(false));
         return (x >> ((k%8)*2)) & 0b11;
     }
+
+    private int distanceTo(int x, int y) {
+        return Math.max(Math.abs(x - currentX), Math.abs(y - currentY));
+    }
+
+    private int parity(boolean inverse) {
+        return ((roundNumber % 2 == 0) ^ inverse) ? 0 : GRID_MAX_IDX;
+    }
+
 }

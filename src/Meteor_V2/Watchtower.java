@@ -7,8 +7,6 @@ public strictfp class Watchtower extends Building {
     private MapLocation attackTarget = null;
     private MapLocation closestEnemyArchonLocation = null;
 
-    // private boolean isGoingToDieSoon = false;
-
     private int distanceToEnemyArchon = INF;
 
     public Watchtower(RobotController rc) throws GameActionException {
@@ -43,24 +41,13 @@ public strictfp class Watchtower extends Building {
             }
         }
 
-        /*
-        if (!isGoingToDieSoon && rc.getHealth() <= 30) {
-            rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) - 1);
-            isGoingToDieSoon = true;
-        }
-
-        if (isGoingToDieSoon && rc.getHealth() > 70) {
-            rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) + 1);
-            isGoingToDieSoon = false;
-        }
-        */
     }
 
     private void updateAttackTarget() {
         int minHealth = INF;
         attackTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20, rc.getTeam().opponent());
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20, team.opponent());
 
         for (RobotInfo robot : nearbyRobots) {
             int health = robot.getHealth();
@@ -81,6 +68,6 @@ public strictfp class Watchtower extends Building {
     }
 
     private boolean isOnBoundary() {
-        return rc.senseNearbyRobots(34, rc.getTeam().opponent()).length > 0;
+        return rc.senseNearbyRobots(34, team.opponent()).length > 0;
     }
 }

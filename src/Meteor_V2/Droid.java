@@ -7,7 +7,6 @@ public strictfp class Droid extends Robot {
     protected final int parentArchonIdx;
     protected final MapLocation parentArchonLocation;
 
-    protected boolean moved = false;
     protected boolean evading = false;
 
     public Droid(RobotController rc) throws GameActionException {
@@ -20,19 +19,17 @@ public strictfp class Droid extends Robot {
     public void step() throws GameActionException {
         super.step();
 
-        moved = false;
         evading = false;
     }
 
     protected void move() throws GameActionException {
-        if (moved || !rc.isMovementReady()) return;
+        if (!rc.isMovementReady()) { return; }
 
         int rubbleTolerance = 100;
         if (evading) rubbleTolerance = 10;
         else if (minimap.getLevel(target) >= 3) rubbleTolerance = Math.max((int)Math.sqrt(currentLocation.distanceSquaredTo(target)) * 5, 20);
 
         bfs.move(target, rubbleTolerance);
-        moved = true;
     }
 
     protected boolean canSense3by3At(MapLocation location) {
@@ -42,13 +39,16 @@ public strictfp class Droid extends Robot {
     protected void updateTargetForEvasion(MapLocation location) throws GameActionException {
         int minRubble = INF;
         int currentDistance = currentLocation.distanceSquaredTo(location);
-        for(Direction direction : directions) {
-            MapLocation evadingLocation = currentLocation.add(direction);
-            if(evadingLocation.x < 0 || evadingLocation.x >= rc.getMapWidth() || evadingLocation.y < 0 || evadingLocation.y >= rc.getMapHeight()) continue;
-            if(rc.canSenseLocation(evadingLocation) && rc.canSenseRobotAtLocation(evadingLocation)) continue;
-            if(evadingLocation.distanceSquaredTo(location) <= currentDistance) continue;
+
+        for (Direction direction : directions) {
+            MapLocation evadingLocation = rc.adjacentLocation(direction);
+
+            if (!rc.canMove(direction)) { continue; }
+            if (evadingLocation.distanceSquaredTo(location) <= currentDistance) { continue; }
+
             int rubble = rc.senseRubble(evadingLocation);
-            if(rubble < minRubble) {
+
+            if (rubble < minRubble) {
                 minRubble = rubble;
                 target = evadingLocation;
                 evading = true;

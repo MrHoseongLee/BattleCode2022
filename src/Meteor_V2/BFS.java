@@ -15,11 +15,11 @@ public abstract class BFS {
     void move(MapLocation target, int rubbleTolerance) throws GameActionException {
         MapLocation currentLocation = rc.getLocation();
 
-        if(!rc.isMovementReady()) { return; }
-        if(currentLocation.equals(target)) { return; }
+        if (!rc.isMovementReady()) { return; }
+        if (currentLocation.equals(target)) { return; }
 
         Direction direction = getBestDir(target);
-        if(direction != null && rc.canMove(direction) && rc.senseRubble(rc.adjacentLocation(direction)) <= rc.senseRubble(currentLocation) + rubbleTolerance) {
+        if (direction != null && rc.canMove(direction) && rc.senseRubble(rc.adjacentLocation(direction)) <= rc.senseRubble(currentLocation) + rubbleTolerance) {
             rc.move(direction);
         }
     }

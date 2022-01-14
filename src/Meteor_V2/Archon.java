@@ -28,11 +28,14 @@ public strictfp class Archon extends Building {
         final int n = rc.readSharedArray(Idx.teamArchonCount);
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
 
-        if(archonIdx == getFirstLivingTeamArchonIdx()) {
-            minimap.initTurn();
+        // Reset the minimap (by the archon that is currently alive and has the smallest ID)
+        if (archonIdx == getFirstAliveTeamArchonIdx()) {
+            minimap.reset();
 
             for (int i = 0; i < n * 3; ++i) {
                 int code = rc.readSharedArray(i + Idx.enemyArchonLocationOffset);
+
+                if (code == 60) { continue; }
 
                 int state = decodeID(code);
                 MapLocation location = decodeLocation(code);
@@ -41,41 +44,38 @@ public strictfp class Archon extends Building {
             }
         }
 
-        if(!dead && rc.getHealth() <= 100) {
+        if (!dead && rc.getHealth() <= 100) {
             dead = true;
             rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, 60);
         }
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
 
-        minimap.reportNearbyEnemies(nearbyRobots);
+        minimap.reportNearbyEnemies(nearbyEnemies);
 
-        findRepairTarget();
+        updateRepairTarget();
 
         boolean underAttack = false;
 
         if (lead <= 500) {
-            for (RobotInfo robot : nearbyRobots) {
-                if (!isRobotOnSameTeam(robot)) {
-                    underAttack = true;
-                    minimap.reportEnemy(currentLocation, 3);
-                    break;
-                }
+            if (nearbyEnemies.length > 0) { 
+                underAttack = true; 
+                minimap.reportEnemy(currentLocation, 3); 
             }
         }
 
         if (rc.isActionReady()) {
-            if (underAttack) buildDroid(RobotType.SOLDIER);
+            if (underAttack) { buildDroid(RobotType.SOLDIER); }
             else if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (180 * n)) {
-                if (lead >= 50 * countLivingTeamArchonsAfter(archonIdx) || (lead >= 50 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
+                if (lead >= 50 * countAliveTeamArchonsAfter(archonIdx) || (lead >= 50 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
                     buildDroid(RobotType.MINER);
                     minerCnt += 1;
                     rc.writeSharedArray(Idx.nextArchonToBuild, (archonIdx + 1) % n);
                 }
             }
-            else if (lead >= 200 && RNG.nextInt(10) < 2) buildDroid(RobotType.BUILDER);
+            else if (lead >= 200 && RNG.nextInt(10) < 2) { buildDroid(RobotType.BUILDER); }
             else if (lead >= 75) {
-                if (lead >= 75 * countLivingTeamArchonsAfter(archonIdx) || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
+                if (lead >= 75 * countAliveTeamArchonsAfter(archonIdx) || rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx) {
                     int k = 2; //Math.min(3, rc.getRoundNum() / 50);
                     if (lead >= 1000 || RNG.nextInt(10) < 6 + k) { buildDroid(RobotType.SOLDIER); }
                     else { buildDroid(RobotType.MINER); }
@@ -84,7 +84,7 @@ public strictfp class Archon extends Building {
             }
         }
 
-        if (repairTarget != null && rc.canRepair(repairTarget)) rc.repair(repairTarget);
+        if (repairTarget != null && rc.canRepair(repairTarget)) { rc.repair(repairTarget); }
     }
 
     private void buildDroid(RobotType robotType) throws GameActionException {
@@ -98,7 +98,7 @@ public strictfp class Archon extends Building {
         if (bestDirection != Direction.CENTER) { rc.buildRobot(robotType, bestDirection); }
     }
 
-    private int countLivingTeamArchonsAfter(int offset) throws GameActionException {
+    private int countAliveTeamArchonsAfter(int offset) throws GameActionException {
         int count = 0;
 
         int n = rc.readSharedArray(Idx.teamArchonCount);
@@ -111,7 +111,7 @@ public strictfp class Archon extends Building {
         return count;
     }
 
-    private int getFirstLivingTeamArchonIdx() throws GameActionException {
+    private int getFirstAliveTeamArchonIdx() throws GameActionException {
         for (int i = 0; i < archonIdx; ++i) {
             if (rc.readSharedArray(i + Idx.teamArchonDataOffset) != 60) {
                 return i;
@@ -139,26 +139,25 @@ public strictfp class Archon extends Building {
         for (int i = 0; i < n * 3; ++i) {
             for(int j = 0; j < i; ++j) {
                 if ((rc.readSharedArray(i + Idx.enemyArchonLocationOffset) & 0xFFF) == (rc.readSharedArray(j + Idx.enemyArchonLocationOffset) & 0xFFF)) {
-                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(61, 0));
+                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(60, 0));
                     break;
                 }
             }
         }
     }
 
-    private void findRepairTarget() {
+    private void updateRepairTarget() {
         int minHealth = INF;
         repairTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(20);
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, team);
 
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() != rc.getTeam()) continue;
-            if (robot.getType().isBuilding()) continue;
-            if (robot.getHealth() == robot.getType().getMaxHealth(1)) continue;
+            if (robot.getType().isBuilding()) { continue; }
+            if (robot.getHealth() == robot.getType().getMaxHealth(1)) { continue; }
 
             int health = robot.getHealth();
-            if (robot.getType() == RobotType.SOLDIER) health -= 50;
+            if (robot.getType() == RobotType.SOLDIER) { health -= 50; }
 
             if(health < minHealth) { minHealth = health; repairTarget = robot.location; }
         }
