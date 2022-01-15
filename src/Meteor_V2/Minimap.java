@@ -21,7 +21,7 @@ public class Minimap {
         width = rc.getMapWidth();
         height = rc.getMapHeight();
 
-        GRID_SIZE = (int) Math.ceil(Math.sqrt(width * height / 128.0)) + 3;
+        GRID_SIZE = (int) Math.ceil(Math.sqrt(width * height / 128.0)) + 1;
         GRID_ROW = (rc.getMapHeight() - 1) / GRID_SIZE + 1;
         GRID_COLUMN = (rc.getMapWidth() - 1) / GRID_SIZE + 1;
         GRID_MAX_IDX = (GRID_ROW * GRID_COLUMN - 1) / 8 + 1; // max 13
@@ -64,11 +64,9 @@ public class Minimap {
     }
 
     public void reportNearbyEnemies(RobotInfo[] nearbyRobots) throws GameActionException {
-        boolean attacking = roundNumber >= rc.readSharedArray(Idx.teamArchonCount) * 150;
-
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getType() == RobotType.MINER) { reportEnemy(robot.location, attacking ? 2 : 3); }
-            if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) { reportEnemy(robot.location, attacking ? 3 : 2); }
+            if (robot.getType() == RobotType.MINER) { reportEnemy(robot.location, 1); }
+            if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) { reportEnemy(robot.location, 2); }
         }
     }
 

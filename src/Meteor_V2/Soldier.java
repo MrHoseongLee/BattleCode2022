@@ -15,7 +15,18 @@ public strictfp class Soldier extends Droid {
     public void step() throws GameActionException {
         super.step();
 
+        //parentArchonLocation = getClosestTeamArchonLocation();
+
         nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
+
+        final int enemySoldierCount = getEnemySoldierCount();
+        final boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 100 + 100;
+        final MapLocation closest = getClosestEnemySoldier();
+
+        if (enemySoldierCount >= 2) {
+            minimap.reportEnemy(closest, 3);
+            updateTargetForEvasion(closest);
+        }
 
         // Always attack nearby enemy
         updateAttackTarget();
@@ -24,37 +35,37 @@ public strictfp class Soldier extends Droid {
         minimap.reportNearbyEnemies(nearbyEnemies);
 
         // If low on health, move to parent archon and get healed
-        if (rc.getHealth() <= 20) { movingToParentArchon = true; }
-        if (rc.getHealth() >= 40) { movingToParentArchon = false; }
-        else if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) { movingToParentArchon = true; }
-        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) { movingToParentArchon = false; }
+        if (rc.getHealth() <= 20 && !attacking) movingToParentArchon = true;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) movingToParentArchon = rc.getHealth() < 50;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;
 
         // Reset target if adjacent to it
         if (target != null && currentLocation.isAdjacentTo(target)) { target = null; }
 
+        if (target != null && rc.canSenseLocation(target)) {
+            if (rc.senseRubble(target) > rc.senseRubble(currentLocation) + 10) target = null;
+        }
+
         // Move to attack target
-        if (attackTarget != null && (!isThereRobotTypeAt(attackTarget, RobotType.SOLDIER) || countEnemySoldier() <= 1)) {
+        if (attackTarget != null && (!isThereRobotTypeAt(attackTarget, RobotType.SOLDIER) || enemySoldierCount <= 1)) {
             target = attackTarget;
         }
 
         MapLocation enemy = minimap.getClosestEnemy();
 
-        if (enemy != null && rc.getRoundNum() < rc.readSharedArray(Idx.teamArchonCount) * 150 && currentLocation.distanceSquaredTo(parentArchonLocation) > 20 && isProtectedByEnemyArchon(enemy)) enemy = null;
-        if (enemy != null && (target == null || (!currentLocation.isAdjacentTo(target) && minimap.getLevel(target) < minimap.getLevel(enemy)))) {
+        //if (enemy != null && !attacking && currentLocation.distanceSquaredTo(parentArchonLocation) > 20 && isProtectedByEnemyArchon(enemy)) enemy = null;
+        if (enemy != null && (target == null || (currentLocation.distanceSquaredTo(target) > 40 && minimap.getLevel(target) < minimap.getLevel(enemy)))) {
             target = enemy;
-        }
-
-        if (target == null || enemy == null) {
-            movingToParentArchon = true;
         }
 
         if (movingToParentArchon) {
             target = parentArchonLocation;
         }
 
-        if (attackTarget != null) { evading = true; }
+        if (target == null) selectRandomTarget();
 
-        MapLocation closest = getClosestEnemySoldier();
+        if (attackTarget != null) evading = true;
+        //if (attackTarget != null && !attacking && currentLocation.distanceSquaredTo(parentArchonLocation) > 20 && isProtectedByEnemyArchon(attackTarget)) updateTargetForEvasion(attackTarget);
 
         if (closest != null && !closest.equals(attackTarget) && currentLocation.distanceSquaredTo(closest) < 13) {
             updateTargetForEvasion(closest);
@@ -63,11 +74,11 @@ public strictfp class Soldier extends Droid {
         }
 
         if (attackTarget != null && rc.isActionReady()) {
-            if (movingToParentArchon) updateTargetForEvasion(attackTarget);
             if (currentLocation.distanceSquaredTo(attackTarget) > 13) {
-                if (countEnemySoldier() > 1) { updateTargetForEvasion(attackTarget); }
-                move();
-                if (rc.canAttack(attackTarget)) { rc.attack(attackTarget); }
+                if(enemySoldierCount <= 1) {
+                    move();
+                    if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
+                }
             } else {
                 if (!isThereRobotTypeAt(attackTarget, RobotType.MINER)) { updateTargetForEvasion(attackTarget); }
                 rc.attack(attackTarget);
@@ -79,6 +90,7 @@ public strictfp class Soldier extends Droid {
         if (Clock.getBytecodesLeft() >= 2000) checkForEnemyArchons();
 
         super.draw();
+        rc.setIndicatorString("enemy = " + enemy);
     }
 
     private void updateAttackTarget() {
@@ -97,7 +109,7 @@ public strictfp class Soldier extends Droid {
         }
     }
 
-    private int countEnemySoldier() {
+    private int getEnemySoldierCount() {
         int count = 0;
 
         for (RobotInfo robot : nearbyEnemies) {
@@ -125,6 +137,15 @@ public strictfp class Soldier extends Droid {
         return closest;
     }
 
+    protected void selectRandomTarget() throws GameActionException {
+        int t = 5;
+        int x1 = Math.max(parentArchonLocation.x - t, 0);
+        int y1 = Math.max(parentArchonLocation.y - t, 0);
+        int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);
+        int y2 = Math.min(parentArchonLocation.y + t, rc.getMapHeight() - 1);
+        target = new MapLocation(RNG.nextInt(x2 - x1 + 1) + x1, RNG.nextInt(y2 - y1 + 1) + y1);
+    }
+
     private boolean isProtectedByEnemyArchon(MapLocation location) throws GameActionException {
         int n = rc.readSharedArray(Idx.teamArchonCount);
 
@@ -134,9 +155,28 @@ public strictfp class Soldier extends Droid {
             int state = decodeID(code);
             MapLocation archon = decodeLocation(code);
 
-            if (state == 1 && archon.distanceSquaredTo(location) <= 34) { return true; }
+            if (state == 1 && archon.distanceSquaredTo(location) <= 80) { return true; }
         }
 
         return false;
+    }
+
+    private MapLocation getClosestTeamArchonLocation() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+        int minDistance = INF;
+        MapLocation closest = null;
+
+        for (int i = 0; i < n; ++i) {
+            MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.teamArchonDataOffset));
+            if(location.x == 60) continue;;
+            int distance = currentLocation.distanceSquaredTo(location);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = location;
+            }
+        }
+
+        return closest;
     }
 }

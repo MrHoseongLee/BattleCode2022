@@ -27,6 +27,7 @@ public strictfp class Archon extends Building {
 
         final int n = rc.readSharedArray(Idx.teamArchonCount);
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
+        final boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 100 + 100;
 
         // Reset the minimap (by the archon that is currently alive and has the smallest ID)
         if (archonIdx == getFirstAliveTeamArchonIdx()) {
@@ -40,7 +41,7 @@ public strictfp class Archon extends Building {
                 int state = decodeID(code);
                 MapLocation location = decodeLocation(code);
 
-                if (state <= 1) { minimap.reportEnemy(location, 1); }
+                if (state <= 1) { minimap.reportEnemy(location, attacking ? 2 : 1); }
             }
         }
 
@@ -58,15 +59,17 @@ public strictfp class Archon extends Building {
         boolean underAttack = false;
 
         if (lead <= 500) {
-            if (nearbyEnemies.length > 0) { 
-                underAttack = true; 
-                minimap.reportEnemy(currentLocation, 3); 
+            for (RobotInfo robot : nearbyEnemies) {
+                if (!isRobotOnSameTeam(robot)) {
+                    underAttack = true;
+                    if (robot.getType() == RobotType.SOLDIER) minimap.reportEnemy(robot.location, 3);
+                }
             }
         }
 
         if (rc.isActionReady()) {
             if (underAttack) { buildDroid(RobotType.SOLDIER); }
-            else if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (180 * n)) {
+            else if (minerCnt < rc.getMapWidth() * rc.getMapHeight() / (240.0 * n)) {
                 if (lead >= 50 * countAliveTeamArchonsAfter(archonIdx) || (lead >= 50 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
                     buildDroid(RobotType.MINER);
                     minerCnt += 1;
@@ -139,7 +142,7 @@ public strictfp class Archon extends Building {
         for (int i = 0; i < n * 3; ++i) {
             for(int j = 0; j < i; ++j) {
                 if ((rc.readSharedArray(i + Idx.enemyArchonLocationOffset) & 0xFFF) == (rc.readSharedArray(j + Idx.enemyArchonLocationOffset) & 0xFFF)) {
-                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(60, 0));
+                    rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, 60);
                     break;
                 }
             }
