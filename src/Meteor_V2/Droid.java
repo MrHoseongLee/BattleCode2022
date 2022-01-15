@@ -26,8 +26,11 @@ public strictfp class Droid extends Robot {
         if (!rc.isMovementReady()) { return; }
 
         int rubbleTolerance = 100;
-        if (evading) rubbleTolerance = 10;
-        else if (minimap.getLevel(target) >= 3) rubbleTolerance = Math.max((int)Math.sqrt(currentLocation.distanceSquaredTo(target)) * 5, 20);
+        if (evading) {
+            rubbleTolerance = 10;
+        } else if (minimap.getLevel(target) >= 3) {
+            rubbleTolerance = Math.max((int)Math.sqrt(currentLocation.distanceSquaredTo(target)) * 5, 20);
+        }
 
         bfs.move(target, rubbleTolerance);
     }
@@ -56,7 +59,27 @@ public strictfp class Droid extends Robot {
         }
     }
 
-    protected void checkEnemyArchon() throws GameActionException {
+    protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {
+        MapLocation bestNeighbor = null;
+        MapLocation[] neighbors = rc.getAllLocationsWithinRadiusSquared(location, 2);
+
+        int minRubble = INF;
+        int minDistance = INF;
+
+        for (MapLocation neighbor : neighbors) {
+            if (rc.canSenseRobotAtLocation(neighbor) && !currentLocation.equals(neighbor)) { continue; }
+
+            int rubble = rc.senseRubble(neighbor);
+            int distance = currentLocation.distanceSquaredTo(neighbor);
+
+            if (rubble < minRubble) { minRubble = rubble; minDistance = INF; bestNeighbor = neighbor; }
+            if (rubble == minRubble && distance < minDistance) { minRubble = rubble; minDistance = distance; bestNeighbor = neighbor; }
+        }
+
+        return bestNeighbor;
+    }
+
+    protected void checkForEnemyArchons() throws GameActionException {
         int n = rc.readSharedArray(Idx.teamArchonCount);
 
         for (int i = 0; i < n * 3; ++i) {

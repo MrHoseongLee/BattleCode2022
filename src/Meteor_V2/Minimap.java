@@ -7,7 +7,6 @@ public class Minimap {
     private final int GRID_SIZE, GRID_ROW, GRID_COLUMN, GRID_MAX_IDX;
 
     private final RobotController rc;
-    private final Team team;
 
     private final int width;
     private final int height;
@@ -18,8 +17,6 @@ public class Minimap {
 
     public Minimap(RobotController rc) {
         this.rc = rc;
-
-        team = rc.getTeam();
 
         width = rc.getMapWidth();
         height = rc.getMapHeight();
@@ -70,7 +67,6 @@ public class Minimap {
         boolean attacking = roundNumber >= rc.readSharedArray(Idx.teamArchonCount) * 150;
 
         for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() == team) { continue; }
             if (robot.getType() == RobotType.MINER) { reportEnemy(robot.location, attacking ? 2 : 3); }
             if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON || robot.getType() == RobotType.WATCHTOWER) { reportEnemy(robot.location, attacking ? 3 : 2); }
         }

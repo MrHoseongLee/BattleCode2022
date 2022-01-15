@@ -352,22 +352,20 @@ public class BFSDroid extends BFS {
     private static Direction d68;
     private static double p68;
     
-    protected Direction getBestDir(MapLocation target) throws GameActionException {
-        MapLocation currrentLocation = rc.getLocation();
+    protected Direction getBestDirection(MapLocation target) throws GameActionException {
+        int dx = target.x - currentLocation.x;
+        int dy = target.y - currentLocation.y;
 
-        int dx = target.x - currrentLocation.x;
-        int dy = target.y - currrentLocation.y;
-
-        if (dx > 0 && dx >= dy && dx >= -dy ) { return getBestDir0(target); }
-        if (dx < 0 && dx <= dy && dx <= -dy ) { return getBestDir1(target); }
-        if (dy > 0 && dx <= dy && -dx <= dy ) { return getBestDir2(target); }
-        if (dy < 0 && dx >= dy && -dx >= dy ) { return getBestDir3(target); }
+        if (dx > 0 && dx >= dy && dx >= -dy ) { return getBestDirection0(target); }
+        if (dx < 0 && dx <= dy && dx <= -dy ) { return getBestDirection1(target); }
+        if (dy > 0 && dx <= dy && -dx <= dy ) { return getBestDirection2(target); }
+        if (dy < 0 && dx >= dy && -dx >= dy ) { return getBestDirection3(target); }
 
         return Direction.CENTER;
     }
     
-    private Direction getBestDir0(MapLocation target) throws GameActionException {
-        l34 = rc.getLocation();
+    private Direction getBestDirection0(MapLocation target) throws GameActionException {
+        l34 = currentLocation;
         v34 = 0; 
         l43 = l34.add(Direction.EAST);
         v43 = 1000000;
@@ -910,8 +908,8 @@ public class BFSDroid extends BFS {
         return ans;
     }
 
-    private Direction getBestDir1(MapLocation target) throws GameActionException {
-        l34 = rc.getLocation();
+    private Direction getBestDirection1(MapLocation target) throws GameActionException {
+        l34 = currentLocation;
         v34 = 0; 
         l26 = l34.add(Direction.NORTHWEST);
         v26 = 1000000;
@@ -1454,8 +1452,8 @@ public class BFSDroid extends BFS {
         return ans;
     }
 
-    private Direction getBestDir2(MapLocation target) throws GameActionException {
-        l34 = rc.getLocation();
+    private Direction getBestDirection2(MapLocation target) throws GameActionException {
+        l34 = currentLocation;
         v34 = 0; 
         l44 = l34.add(Direction.NORTHEAST);
         v44 = 1000000;
@@ -1998,8 +1996,8 @@ public class BFSDroid extends BFS {
         return ans;
     }
 
-    private Direction getBestDir3(MapLocation target) throws GameActionException {
-        l34 = rc.getLocation();
+    private Direction getBestDirection3(MapLocation target) throws GameActionException {
+        l34 = currentLocation;
         v34 = 0; 
         l24 = l34.add(Direction.SOUTHWEST);
         v24 = 1000000;

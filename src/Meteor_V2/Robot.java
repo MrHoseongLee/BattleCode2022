@@ -92,26 +92,6 @@ public class Robot {
         return robot.getTeam().equals(team);
     }
 
-    protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {
-        MapLocation bestNeighbor = null;
-        MapLocation[] neighbors = rc.getAllLocationsWithinRadiusSquared(location, 2);
-
-        int minRubble = INF;
-        int minDistance = INF;
-
-        for (MapLocation neighbor : neighbors) {
-            if (rc.canSenseRobotAtLocation(neighbor) && !currentLocation.equals(neighbor)) { continue; }
-
-            int rubble = rc.senseRubble(neighbor);
-            int distance = currentLocation.distanceSquaredTo(neighbor);
-
-            if (rubble < minRubble) { minRubble = rubble; minDistance = INF; bestNeighbor = neighbor; }
-            if (rubble == minRubble && distance < minDistance) { minRubble = rubble; minDistance = distance; bestNeighbor = neighbor; }
-        }
-
-        return bestNeighbor;
-    }
-
     protected void calculateNextDirection() throws GameActionException {
         nextDirection = Direction.CENTER;
         if (target == null || currentLocation.equals(target)) { return; }
