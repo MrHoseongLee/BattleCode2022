@@ -4,6 +4,7 @@ import battlecode.common.*;
 
 public strictfp class Miner extends Droid {
 
+    private MapLocation closestTeamArchonLocation = null;
     private MapLocation closestEnemyArchonLocation = null;
 
     public Miner(RobotController rc) throws GameActionException {
@@ -29,6 +30,7 @@ public strictfp class Miner extends Droid {
         }
 
         if (rc.isActionReady()) {
+            updateClosestTeamArchonLocation();
             updateClosestEnemyArchonLocation();
             mineLead();
         }
@@ -119,9 +121,26 @@ public strictfp class Miner extends Droid {
         }
     }
 
+    private void updateClosestTeamArchonLocation() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+        int minDistance = INF;
+
+        for (int i = 0; i < n; ++i) {
+            int code = rc.readSharedArray(i + Idx.teamArchonDataOffset);
+
+            if (code == 60) { continue; }
+
+            MapLocation location = decodeLocation(code);
+
+            int distance = currentLocation.distanceSquaredTo(location);
+            if (distance < minDistance) { minDistance = distance; closestTeamArchonLocation = location; }
+        }
+    }
+
     private boolean isScorchedEarthBeneficial(MapLocation location) {
+        if (closestTeamArchonLocation == null) { return false; }
         if (closestEnemyArchonLocation == null) { return false; }
-        return location.distanceSquaredTo(parentArchonLocation) > location.distanceSquaredTo(closestEnemyArchonLocation);
+        return location.distanceSquaredTo(closestTeamArchonLocation) > location.distanceSquaredTo(closestEnemyArchonLocation);
     }
 
    private int distanceTo(MapLocation location) {
