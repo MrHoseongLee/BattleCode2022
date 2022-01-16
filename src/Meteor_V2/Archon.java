@@ -5,8 +5,9 @@ import battlecode.common.*;
 public strictfp class Archon extends Building {
 
     private int minerCnt = 0;
-    private boolean dead = false;
     private MapLocation repairTarget = null;
+
+    private int previousArchonSignal;
 
     private final int archonIdx;
 
@@ -15,6 +16,8 @@ public strictfp class Archon extends Building {
 
         archonIdx = rc.readSharedArray(Idx.teamArchonCount);
         RNG.setSeed(archonIdx);
+
+        previousArchonSignal = ~rc.readSharedArray(Idx.teamArchonSurvivalSignal);
 
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1);
         rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
@@ -45,10 +48,7 @@ public strictfp class Archon extends Building {
             }
         }
 
-        if (!dead && rc.getHealth() <= 100) {
-            dead = true;
-            rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, 60);
-        }
+        updateTeamArchonSurvivalStatus();
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
 
@@ -147,6 +147,23 @@ public strictfp class Archon extends Building {
                 }
             }
         }
+    }
+
+    private void updateTeamArchonSurvivalStatus() throws GameActionException {
+        int signal = rc.readSharedArray(Idx.teamArchonSurvivalSignal);
+
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+        int diff = signal ^ previousArchonSignal;
+
+        for (int i = 0; i < n; ++i) {
+            if ((diff & (1 << i)) == 0) {
+                if (rc.readSharedArray(i + Idx.teamArchonDataOffset) == 60) { continue; }
+                rc.writeSharedArray(i + Idx.teamArchonDataOffset, 60);
+            }
+        }
+
+        previousArchonSignal = signal;
+        rc.writeSharedArray(Idx.teamArchonSurvivalSignal, signal ^ (1 << archonIdx));
     }
 
     private void updateRepairTarget() {

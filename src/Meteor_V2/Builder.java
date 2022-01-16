@@ -41,7 +41,7 @@ public strictfp class Builder extends Droid {
 
             if (rc.canBuildRobot(RobotType.WATCHTOWER, direction)) {
                 rc.buildRobot(RobotType.WATCHTOWER, direction);
-                rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) + 1);
+                // rc.writeSharedArray(Idx.watchTowerCount, rc.readSharedArray(Idx.watchTowerCount) + 1);
                 target = null; buildTarget = null;
                 repairTarget = rc.adjacentLocation(direction);
             }
@@ -64,6 +64,7 @@ public strictfp class Builder extends Droid {
         target = buildTarget;
     }
 
+    /*
     protected void selectRandomTarget() throws GameActionException {
         int t = Math.max((int)(Math.sqrt(rc.readSharedArray(Idx.watchTowerCount)) * 2), 5);
         int x1 = Math.max(parentArchonLocation.x - t, 0);
@@ -80,6 +81,7 @@ public strictfp class Builder extends Droid {
         buildTarget = new MapLocation(x, y);
         target = buildTarget;
     }
+    */
 
     protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {
         MapLocation bestNeighbor = null;
