@@ -97,7 +97,7 @@ public strictfp class Soldier extends Droid {
         int minHealth = INF;
         attackTarget = null;
 
-        for (RobotInfo robot : nearbyEnemies) {
+        for (RobotInfo robot : rc.senseNearbyRobots(13, team.opponent())) {
             int health = robot.getHealth();
             if(robot.getType() == RobotType.SOLDIER) { health -= 50; }
             if(robot.getType() == RobotType.ARCHON) { health -= 100; }
