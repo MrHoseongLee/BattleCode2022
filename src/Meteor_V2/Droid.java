@@ -7,6 +7,7 @@ public strictfp class Droid extends Robot {
     protected final int parentArchonIdx;
     protected final MapLocation parentArchonLocation;
 
+    protected boolean moved = false;
     protected boolean evading = false;
 
     public Droid(RobotController rc) throws GameActionException {
@@ -19,11 +20,12 @@ public strictfp class Droid extends Robot {
     public void step() throws GameActionException {
         super.step();
 
+        moved = false;
         evading = false;
     }
 
     protected void move() throws GameActionException {
-        if (!rc.isMovementReady()) { return; }
+        if (moved || !rc.isMovementReady()) { return; }
 
         int rubbleTolerance = 100;
         if (evading) {
@@ -33,6 +35,7 @@ public strictfp class Droid extends Robot {
         }
 
         bfs.move(target, rubbleTolerance);
+        moved = true;
     }
 
     protected boolean canSense3by3At(MapLocation location) {

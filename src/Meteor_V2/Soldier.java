@@ -139,10 +139,10 @@ public strictfp class Soldier extends Droid {
 
     protected void selectRandomTarget() throws GameActionException {
         int t = 5;
-        int x1 = Math.max(parentArchonLocation.x - t, 0);
-        int y1 = Math.max(parentArchonLocation.y - t, 0);
-        int x2 = Math.min(parentArchonLocation.x + t, rc.getMapWidth() - 1);
-        int y2 = Math.min(parentArchonLocation.y + t, rc.getMapHeight() - 1);
+        int x1 = Math.max(currentLocation.x - t, 0);
+        int y1 = Math.max(currentLocation.y - t, 0);
+        int x2 = Math.min(currentLocation.x + t, rc.getMapWidth() - 1);
+        int y2 = Math.min(currentLocation.y + t, rc.getMapHeight() - 1);
         target = new MapLocation(RNG.nextInt(x2 - x1 + 1) + x1, RNG.nextInt(y2 - y1 + 1) + y1);
     }
 
@@ -168,7 +168,7 @@ public strictfp class Soldier extends Droid {
 
         for (int i = 0; i < n; ++i) {
             MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.teamArchonDataOffset));
-            if(location.x == 60) continue;;
+            if(location.x == 60) continue;
             int distance = currentLocation.distanceSquaredTo(location);
 
             if (distance < minDistance) {
