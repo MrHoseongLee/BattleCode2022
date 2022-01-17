@@ -88,6 +88,14 @@ public class Robot {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().equals(type);
     }
 
+    protected boolean isThereTeamRobotTypeAt(MapLocation location, RobotType type) throws GameActionException {
+        if (rc.canSenseRobotAtLocation(location)) {
+            RobotInfo robot = rc.senseRobotAtLocation(location);
+            return robot.getType().equals(type) && robot.getTeam().equals(team);
+        }
+        return false;
+    }
+
     protected boolean isRobotOnSameTeam(RobotInfo robot) {
         return robot.getTeam().equals(team);
     }

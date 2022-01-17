@@ -7,6 +7,8 @@ public strictfp class Miner extends Droid {
     private MapLocation closestTeamArchonLocation = null;
     private MapLocation closestEnemyArchonLocation = null;
 
+    private boolean isScouting = false;
+
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -18,15 +20,16 @@ public strictfp class Miner extends Droid {
 
         minimap.reportNearbyEnemies(nearbyEnemies);
 
+        // Evade closest enemy soldier
         if (rc.isMovementReady()) {
-            int minDistance = INF; MapLocation closestEnemySolierLocation = null;
+            int minDistance = INF; MapLocation closestEnemySoldierLocation = null;
             for (RobotInfo robot : nearbyEnemies) {
                 if (robot.getType() == RobotType.SOLDIER) {
                     int distance = currentLocation.distanceSquaredTo(robot.getLocation());
-                    if (distance < minDistance) { minDistance = distance; closestEnemySolierLocation = robot.location; }
+                    if (distance < minDistance) { minDistance = distance; closestEnemySoldierLocation = robot.location; }
                 }
             }
-            if (closestEnemySolierLocation != null) { updateTargetForEvasion(closestEnemySolierLocation); move(); }
+            if (closestEnemySoldierLocation != null) { updateTargetForEvasion(closestEnemySoldierLocation); move(); }
         }
 
         if (rc.isActionReady()) {
@@ -88,7 +91,7 @@ public strictfp class Miner extends Droid {
     }
 
     private void updateTarget() throws GameActionException {
-        if (currentLocation.equals(target)) { target = null; }
+        if (!isScouting || currentLocation.equals(target)) { target = null; }
 
         int minDistance = INF;
         MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(-1, 2);
@@ -99,7 +102,9 @@ public strictfp class Miner extends Droid {
             if (distance < minDistance) { minDistance = distance; target = location; }
         }
 
-        if (target == null) { selectRandomTarget(); } 
+        isScouting = minDistance == INF;
+
+        if (target == null && isScouting) { selectRandomTarget(); } 
         else if (minDistance != INF && currentLocation.distanceSquaredTo(target) <= 5) { target = bestLocationNextTo(target); }
 
     }

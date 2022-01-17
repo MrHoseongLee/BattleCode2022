@@ -56,6 +56,7 @@ public strictfp class Watchtower extends Building {
     }
 
     private void updateClosestEnemyArchonLocation() throws GameActionException {
+        /*
         int minDistance = INF;
         for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
             MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.enemyArchonDataOffset));
@@ -65,6 +66,7 @@ public strictfp class Watchtower extends Building {
         if (closestEnemyArchonLocation == null) {
             closestEnemyArchonLocation = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
         }
+        */
     }
 
     private boolean isOnBoundary() {
