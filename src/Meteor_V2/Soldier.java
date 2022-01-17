@@ -23,11 +23,6 @@ public strictfp class Soldier extends Droid {
         final boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 100 + 100;
         final MapLocation closest = getClosestEnemySoldier();
 
-        if (enemySoldierCount >= 2) {
-            minimap.reportEnemy(closest, 3);
-            updateTargetForEvasion(closest);
-        }
-
         // Always attack nearby enemy
         updateAttackTarget();
 
@@ -35,9 +30,9 @@ public strictfp class Soldier extends Droid {
         minimap.reportNearbyEnemies(nearbyEnemies);
 
         // If low on health, move to parent archon and get healed
-        if (rc.getHealth() <= 20 && !attacking) movingToParentArchon = true;
+        /*if (rc.getHealth() <= 10 && !attacking) movingToParentArchon = true;
         if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) movingToParentArchon = rc.getHealth() < 50;
-        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;*/
 
         // Reset target if adjacent to it
         if (target != null && currentLocation.isAdjacentTo(target)) { target = null; }
@@ -47,14 +42,14 @@ public strictfp class Soldier extends Droid {
         }
 
         // Move to attack target
-        if (attackTarget != null && (!isThereRobotTypeAt(attackTarget, RobotType.SOLDIER) || enemySoldierCount <= 1)) {
+        if (attackTarget != null && !isThereRobotTypeAt(attackTarget, RobotType.SOLDIER)) {
             target = attackTarget;
         }
 
         MapLocation enemy = minimap.getClosestEnemy();
 
         //if (enemy != null && !attacking && currentLocation.distanceSquaredTo(parentArchonLocation) > 20 && isProtectedByEnemyArchon(enemy)) enemy = null;
-        if (enemy != null && (target == null || (currentLocation.distanceSquaredTo(target) > 40 && minimap.getLevel(target) < minimap.getLevel(enemy)))) {
+        if (enemy != null && (target == null || minimap.getLevel(target) == 0 || currentLocation.distanceSquaredTo(target) > 40 && minimap.getLevel(target) < minimap.getLevel(enemy))) {
             target = enemy;
         }
 
@@ -64,33 +59,37 @@ public strictfp class Soldier extends Droid {
 
         if (target == null) selectRandomTarget();
 
-        if (attackTarget != null) evading = true;
         //if (attackTarget != null && !attacking && currentLocation.distanceSquaredTo(parentArchonLocation) > 20 && isProtectedByEnemyArchon(attackTarget)) updateTargetForEvasion(attackTarget);
 
-        if (closest != null && !closest.equals(attackTarget) && currentLocation.distanceSquaredTo(closest) < 13) {
-            updateTargetForEvasion(closest);
-            if (rc.canAttack(closest)) rc.attack(closest);
-            move();
+        if (closest != null && currentLocation.distanceSquaredTo(closest) <= 13) updateTargetForEvasion(nearbyEnemies);
+
+        if (enemySoldierCount >= 2) {
+            minimap.reportEnemy(closest, 3);
+            updateTargetForEvasion(nearbyEnemies);
         }
 
+        /*if (closest != null && !closest.equals(attackTarget) && currentLocation.distanceSquaredTo(closest) < 13) {
+            updateTargetForEvasion(nearbyEnemies);
+            if (rc.canAttack(closest)) rc.attack(closest);
+            move();
+        }*/
+
         if (attackTarget != null && rc.isActionReady()) {
-            if (currentLocation.distanceSquaredTo(attackTarget) > 13) {
-                if(enemySoldierCount <= 1) {
-                    move();
-                    if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
-                }
-            } else {
-                if (!isThereRobotTypeAt(attackTarget, RobotType.MINER)) { updateTargetForEvasion(attackTarget); }
-                rc.attack(attackTarget);
-            }
+            if (!isThereRobotTypeAt(attackTarget, RobotType.MINER)) { updateTargetForEvasion(nearbyEnemies); }
+            rc.attack(attackTarget);
         }
 
         move();
 
+        if (rc.isActionReady()) {
+            updateAttackTarget();
+            if (attackTarget != null && rc.canAttack(attackTarget)) rc.attack(attackTarget);
+        }
+
         if (Clock.getBytecodesLeft() >= 2000) checkForEnemyArchons();
 
         super.draw();
-        rc.setIndicatorString("enemy = " + enemy);
+        //rc.setIndicatorString("enemy = " + enemy);
     }
 
     private void updateAttackTarget() {
@@ -113,7 +112,7 @@ public strictfp class Soldier extends Droid {
         int count = 0;
 
         for (RobotInfo robot : nearbyEnemies) {
-            if (robot.getType() == RobotType.SOLDIER) { count += 1; }
+            if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON) { count += 1; }
         }
 
         return count;

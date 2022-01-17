@@ -29,7 +29,7 @@ public strictfp class Miner extends Droid {
                     if (distance < minDistance) { minDistance = distance; closestEnemySoldierLocation = robot.location; }
                 }
             }
-            if (closestEnemySoldierLocation != null) { updateTargetForEvasion(closestEnemySoldierLocation); move(); }
+            if (closestEnemySoldierLocation != null) { updateTargetForEvasion(nearbyEnemies); move(); }
         }
 
         if (rc.isActionReady()) {
@@ -104,7 +104,7 @@ public strictfp class Miner extends Droid {
 
         isScouting = minDistance == INF;
 
-        if (target == null && isScouting) { selectRandomTarget(); } 
+        if (target == null && isScouting) { selectRandomTarget(); }
         else if (minDistance != INF && currentLocation.distanceSquaredTo(target) <= 5) { target = bestLocationNextTo(target); }
 
     }

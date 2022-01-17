@@ -25,7 +25,7 @@ public strictfp class Droid extends Robot {
     }
 
     protected void move() throws GameActionException {
-        if (moved || !rc.isMovementReady()) { return; }
+        if (moved || !rc.isMovementReady() || currentLocation.equals(target)) { return; }
 
         int rubbleTolerance = 100;
         if (evading) {
@@ -42,24 +42,37 @@ public strictfp class Droid extends Robot {
         return currentLocation.distanceSquaredTo(location) <= 10;
     }
 
-    protected void updateTargetForEvasion(MapLocation location) throws GameActionException {
-        int minRubble = INF;
-        int currentDistance = currentLocation.distanceSquaredTo(location);
+    protected void updateTargetForEvasion(RobotInfo[] nearbyEnemies) throws GameActionException {
+        if(evading) return;
 
-        for (Direction direction : directions) {
-            MapLocation evadingLocation = rc.adjacentLocation(direction);
-
-            if (!rc.canMove(direction)) { continue; }
-            if (evadingLocation.distanceSquaredTo(location) <= currentDistance) { continue; }
-
-            int rubble = rc.senseRubble(evadingLocation);
-
-            if (rubble < minRubble) {
-                minRubble = rubble;
-                target = evadingLocation;
-                evading = true;
+        int maxDistance = 0;
+        int rubble = rc.senseRubble(currentLocation);
+        for (RobotInfo robot : nearbyEnemies) {
+            if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON) {
+                maxDistance += currentLocation.distanceSquaredTo(robot.location);
             }
         }
+        target = currentLocation;
+
+        for (Direction direction : directions) {
+            MapLocation location = rc.adjacentLocation(direction);
+
+            if (!rc.onTheMap(location) || rc.canSenseRobotAtLocation(location) || rc.senseRubble(location) > rubble + 20) continue;
+
+            int distance = 0;
+            for (RobotInfo robot : nearbyEnemies) {
+                if (robot.getType() == RobotType.SOLDIER || robot.getType() == RobotType.ARCHON) {
+                    distance += location.distanceSquaredTo(robot.location);
+                }
+            }
+
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                target = location;
+            }
+        }
+
+        evading = true;
     }
 
     protected MapLocation bestLocationNextTo(MapLocation location) throws GameActionException {

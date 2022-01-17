@@ -21,7 +21,7 @@ public class Minimap {
         width = rc.getMapWidth();
         height = rc.getMapHeight();
 
-        GRID_SIZE = (int) Math.ceil(Math.sqrt(width * height / 128.0)) + 3;
+        GRID_SIZE = (int) Math.ceil(Math.sqrt(width * height / 128.0)) + 1;
         GRID_ROW = (rc.getMapHeight() - 1) / GRID_SIZE + 1;
         GRID_COLUMN = (rc.getMapWidth() - 1) / GRID_SIZE + 1;
         GRID_MAX_IDX = (GRID_ROW * GRID_COLUMN - 1) / 8 + 1; // max 13
