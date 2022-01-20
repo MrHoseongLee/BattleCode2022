@@ -30,9 +30,9 @@ public strictfp class Soldier extends Droid {
         minimap.reportNearbyEnemies(nearbyEnemies);
 
         // If low on health, move to parent archon and get healed
-        /*if (rc.getHealth() <= 10 && !attacking) movingToParentArchon = true;
-        if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) movingToParentArchon = rc.getHealth() < 50;
-        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;*/
+        if (rc.getHealth() <= 10 && !attacking) movingToParentArchon = true;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) movingToParentArchon = rc.getHealth() <= 45;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;
 
         // Reset target if adjacent to it
         if (target != null && currentLocation.isAdjacentTo(target)) { target = null; }
@@ -44,6 +44,7 @@ public strictfp class Soldier extends Droid {
         // Move to attack target
         if (attackTarget != null && !isThereRobotTypeAt(attackTarget, RobotType.SOLDIER)) {
             target = attackTarget;
+            if (currentLocation.isAdjacentTo(attackTarget)) target = currentLocation;
         }
 
         MapLocation enemy = minimap.getClosestEnemy();

@@ -30,8 +30,8 @@ public strictfp class Droid extends Robot {
         int rubbleTolerance = 100;
         if (evading) {
             rubbleTolerance = 10;
-        } else if (minimap.getLevel(target) >= 3) {
-            rubbleTolerance = Math.max((int)Math.sqrt(currentLocation.distanceSquaredTo(target)) * 5, 20);
+        } else if (minimap.getLevel(target) >= 1) {
+            rubbleTolerance = Math.max((int)Math.sqrt(currentLocation.distanceSquaredTo(target)) * 5, 10);
         }
 
         bfs.move(target, rubbleTolerance);
@@ -57,7 +57,7 @@ public strictfp class Droid extends Robot {
         for (Direction direction : directions) {
             MapLocation location = rc.adjacentLocation(direction);
 
-            if (!rc.onTheMap(location) || rc.canSenseRobotAtLocation(location) || rc.senseRubble(location) > rubble + 20) continue;
+            if (!rc.onTheMap(location) || rc.canSenseRobotAtLocation(location) || rc.senseRubble(location) > rubble + 10) continue;
 
             int distance = 0;
             for (RobotInfo robot : nearbyEnemies) {
