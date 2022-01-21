@@ -28,6 +28,7 @@ public strictfp class Soldier extends Droid {
 
         // Check enemy in vision
         minimap.reportNearbyEnemies(nearbyEnemies);
+        reportNearbyArchons(nearbyEnemies);
 
         // If low on health, move to parent archon and get healed
         if (rc.getHealth() <= 10 && !attacking) movingToParentArchon = true;

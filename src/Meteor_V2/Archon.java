@@ -36,6 +36,7 @@ public strictfp class Archon extends Building {
         if (archonIdx == getFirstAliveTeamArchonIdx()) {
             minimap.reset();
 
+            // Report undiscovered enemy archon
             for (int i = 0; i < n * 3; ++i) {
                 int code = rc.readSharedArray(i + Idx.enemyArchonLocationOffset);
 
@@ -44,7 +45,18 @@ public strictfp class Archon extends Building {
                 int state = decodeID(code);
                 MapLocation location = decodeLocation(code);
 
-                if (state <= 1) { minimap.reportEnemy(location, attacking ? 2 : 1); }
+                if (state == 0) { minimap.reportEnemy(location, attacking ? 2 : 1); }
+            }
+
+            // Report alive enemy archon
+            for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
+                int code = rc.readSharedArray(i + Idx.enemyArchonDataOffset);
+
+                MapLocation location = decodeLocation(code);
+
+                if (location.x == 60) { continue; }
+
+                minimap.reportEnemy(location, attacking ? 2 : 1);
             }
         }
 

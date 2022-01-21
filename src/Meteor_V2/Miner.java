@@ -19,6 +19,7 @@ public strictfp class Miner extends Droid {
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
 
         minimap.reportNearbyEnemies(nearbyEnemies);
+        reportNearbyArchons(nearbyEnemies);
 
         // Evade closest enemy soldier
         if (rc.isMovementReady()) {
