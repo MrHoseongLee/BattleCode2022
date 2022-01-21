@@ -15,7 +15,7 @@ public strictfp class Soldier extends Droid {
     public void step() throws GameActionException {
         super.step();
 
-        //parentArchonLocation = getClosestTeamArchonLocation();
+        parentArchonLocation = getClosestTeamArchonLocation();
 
         nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
 
@@ -145,5 +145,23 @@ public strictfp class Soldier extends Droid {
         int x2 = Math.min(currentLocation.x + t, rc.getMapWidth() - 1);
         int y2 = Math.min(currentLocation.y + t, rc.getMapHeight() - 1);
         target = new MapLocation(RNG.nextInt(x2 - x1 + 1) + x1, RNG.nextInt(y2 - y1 + 1) + y1);
+    }
+    private MapLocation getClosestTeamArchonLocation() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+        int minDistance = INF;
+        MapLocation closest = null;
+
+        for (int i = 0; i < n; ++i) {
+            MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.teamArchonDataOffset));
+            if(location.x == 60) continue;
+            int distance = currentLocation.distanceSquaredTo(location);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = location;
+            }
+        }
+
+        return closest;
     }
 }

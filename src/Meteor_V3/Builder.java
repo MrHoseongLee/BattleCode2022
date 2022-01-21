@@ -10,7 +10,6 @@ public strictfp class Builder extends Droid {
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
-
         rc.writeSharedArray(52, rc.readSharedArray(52) | (1 << parentArchonIdx));
     }
 
@@ -106,7 +105,7 @@ public strictfp class Builder extends Droid {
         int minHealth = INF;
         repairTarget = null;
 
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, rc.getTeam());
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(RobotType.BUILDER.visionRadiusSquared, team);
 
         for (RobotInfo robot : nearbyRobots) {
             if (!robot.getType().isBuilding()) { continue; }

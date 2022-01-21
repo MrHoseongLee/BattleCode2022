@@ -5,7 +5,7 @@ import battlecode.common.*;
 public strictfp class Droid extends Robot {
 
     protected final int parentArchonIdx;
-    protected final MapLocation parentArchonLocation;
+    protected MapLocation parentArchonLocation;
 
     protected boolean moved = false;
     protected boolean evading = false;

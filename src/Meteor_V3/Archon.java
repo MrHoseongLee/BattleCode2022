@@ -8,6 +8,7 @@ public strictfp class Archon extends Building {
 
     private MapLocation repairTarget = null;
 
+    private int portableArchonCount;
     private int previousArchonSignal;
 
     private final int archonIdx;
@@ -18,7 +19,7 @@ public strictfp class Archon extends Building {
         archonIdx = rc.readSharedArray(Idx.teamArchonCount);
         RNG.setSeed(archonIdx);
 
-        previousArchonSignal = ~rc.readSharedArray(Idx.teamArchonSurvivalSignal);
+        previousArchonSignal = ~rc.readSharedArray(Idx.teamArchonStatus);
 
         rc.writeSharedArray(Idx.teamArchonCount, archonIdx + 1);
         rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
@@ -65,7 +66,7 @@ public strictfp class Archon extends Building {
             }
         }
 
-        updateTeamArchonSurvivalStatus();
+        updateTeamArchonStatus();
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
 
@@ -79,6 +80,30 @@ public strictfp class Archon extends Building {
             for (RobotInfo robot : nearbyEnemies) {
                 underAttack = true;
                 if (isDangerous(robot.type)) minimap.reportEnemy(robot.location, 3);
+            }
+        }
+
+        if (rc.getMode() == RobotMode.PORTABLE) {
+            if (currentLocation.equals(target)) { transform(); }
+
+            target = minimap.getClosestEnemy();
+
+            RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, team);
+            for (RobotInfo robot : nearbyRobots) {
+                if (robot.getType() == RobotType.SOLDIER && robot.getHealth() < RobotType.SOLDIER.getMaxHealth(1)) {
+                    target = findBestLocationToHeal();
+                    break;
+                }
+            }
+
+            move();
+            rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
+            return;
+        }
+
+        if (!underAttack && repairTarget == null) {
+            if (rc.getRoundNum() >= 60 && portableArchonCount + 1 < rc.getArchonCount()) { 
+                if (transform()) { return; }
             }
         }
 
@@ -137,8 +162,8 @@ public strictfp class Archon extends Building {
         }
     }
 
-    private void updateTeamArchonSurvivalStatus() throws GameActionException {
-        int signal = rc.readSharedArray(Idx.teamArchonSurvivalSignal);
+    private void updateTeamArchonStatus() throws GameActionException {
+        int signal = rc.readSharedArray(Idx.teamArchonStatus);
 
         int n = rc.readSharedArray(Idx.teamArchonCount);
         int diff = signal ^ previousArchonSignal;
@@ -150,8 +175,15 @@ public strictfp class Archon extends Building {
             }
         }
 
+        portableArchonCount = 0;
+        for (int i = n; i < 2 * n; ++i) {
+            if ((signal & (1 << i)) > 0) {
+                portableArchonCount += 1;
+            }
+        }
+
         previousArchonSignal = signal;
-        rc.writeSharedArray(Idx.teamArchonSurvivalSignal, signal ^ (1 << archonIdx));
+        rc.writeSharedArray(Idx.teamArchonStatus, signal ^ (1 << archonIdx));
     }
 
     private void updateRepairTarget() {
@@ -171,4 +203,32 @@ public strictfp class Archon extends Building {
             if(health < minHealth) { minHealth = health; repairTarget = robot.location; }
         }
     }
+
+    private boolean transform() throws GameActionException {
+        if (rc.canTransform()) { 
+            rc.transform(); 
+            target = minimap.getClosestEnemy(); 
+            int n = rc.readSharedArray(Idx.teamArchonCount);
+            int signal = rc.readSharedArray(Idx.teamArchonStatus);
+            rc.writeSharedArray(Idx.teamArchonStatus, signal ^ (1 << (archonIdx + n)));
+            return true;
+        }
+        return false;
+    }
+
+    private MapLocation findBestLocationToHeal() throws GameActionException {
+        MapLocation bestLocation = currentLocation; int minRubble = INF; int minDistance = INF;
+        MapLocation[] nearbyLocations = rc.getAllLocationsWithinRadiusSquared(currentLocation, 34);
+        for (MapLocation location : nearbyLocations) {
+            int rubble = rc.senseRubble(location);
+            int distance = currentLocation.distanceSquaredTo(location);
+            if (rubble < minRubble || (rubble == minRubble && distance < minDistance)) {
+                minRubble = rubble;
+                minDistance = distance;
+                bestLocation = location;
+            }
+        }
+        return bestLocation;
+    }
+
 }
