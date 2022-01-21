@@ -146,6 +146,7 @@ public strictfp class Soldier extends Droid {
         int y2 = Math.min(currentLocation.y + t, rc.getMapHeight() - 1);
         target = new MapLocation(RNG.nextInt(x2 - x1 + 1) + x1, RNG.nextInt(y2 - y1 + 1) + y1);
     }
+
     private MapLocation getClosestTeamArchonLocation() throws GameActionException {
         int n = rc.readSharedArray(Idx.teamArchonCount);
         int minDistance = INF;

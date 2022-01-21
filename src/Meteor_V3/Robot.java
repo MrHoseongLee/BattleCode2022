@@ -14,7 +14,7 @@ public class Robot {
 
     protected final RobotController rc;
 
-    protected BFS bfs; // TODO change to final if BFSBuilding is made
+    protected final BFS bfs;
     protected final Minimap minimap;
 
     protected final Team team;

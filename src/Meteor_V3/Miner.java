@@ -21,16 +21,15 @@ public strictfp class Miner extends Droid {
         minimap.reportNearbyEnemies(nearbyEnemies);
         reportNearbyArchons(nearbyEnemies);
 
-        // Evade closest enemy soldier
+        // Evade enemy soldier
         if (rc.isMovementReady()) {
-            int minDistance = INF; MapLocation closestEnemySoldierLocation = null;
             for (RobotInfo robot : nearbyEnemies) {
-                if (robot.getType() == RobotType.SOLDIER) {
-                    int distance = currentLocation.distanceSquaredTo(robot.getLocation());
-                    if (distance < minDistance) { minDistance = distance; closestEnemySoldierLocation = robot.location; }
+                if (isDangerous(robot.getType())) {
+                    updateTargetForEvasion(nearbyEnemies);
+                    move();
+                    break;
                 }
             }
-            if (closestEnemySoldierLocation != null) { updateTargetForEvasion(nearbyEnemies); move(); }
         }
 
         if (rc.isActionReady()) {

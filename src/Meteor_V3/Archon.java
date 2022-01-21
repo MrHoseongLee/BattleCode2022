@@ -84,20 +84,38 @@ public strictfp class Archon extends Building {
         }
 
         if (rc.getMode() == RobotMode.PORTABLE) {
-            if (currentLocation.equals(target)) { transform(); }
+            if (currentLocation.equals(target)) { 
+                if (transform()) {
+                    return;
+                }
+            }
 
             target = minimap.getClosestEnemy();
 
+            if (rc.isMovementReady()) {
+                for (RobotInfo robot : nearbyEnemies) {
+                    if (isDangerous(robot.getType())) {
+                        updateTargetForEvasion(nearbyEnemies);
+                        move();
+                        rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(rc.getLocation(), rc.getID()));
+                        return;
+                    }
+                }
+            }
+
             RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, team);
             for (RobotInfo robot : nearbyRobots) {
-                if (robot.getType() == RobotType.SOLDIER && robot.getHealth() < RobotType.SOLDIER.getMaxHealth(1)) {
-                    target = findBestLocationToHeal();
-                    break;
+                RobotType type = robot.getType();
+                if (type == RobotType.SOLDIER || type == RobotType.SAGE) {
+                    if (robot.getHealth() < type.getMaxHealth(1)) {
+                        target = findBestLocationToHeal();
+                        break;
+                    }
                 }
             }
 
             move();
-            rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(currentLocation, rc.getID()));
+            rc.writeSharedArray(archonIdx + Idx.teamArchonDataOffset, encode(rc.getLocation(), rc.getID()));
             return;
         }
 
