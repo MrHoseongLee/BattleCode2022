@@ -10,17 +10,10 @@ public strictfp class Builder extends Droid {
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
-        rc.writeSharedArray(52, rc.readSharedArray(52) | (1 << parentArchonIdx));
     }
 
     public void step() throws GameActionException {
         super.step();
-
-        if (!dead && rc.getHealth() <= 10) {
-            dead = true;
-            rc.writeSharedArray(52, rc.readSharedArray(52) & ~(1 << parentArchonIdx));
-            rc.disintegrate();
-        }
 
         // Repair if possible
         updateRepairTarget();
@@ -36,7 +29,7 @@ public strictfp class Builder extends Droid {
             }
         }
 
-        if (rc.readSharedArray(51) != 0 || rc.readSharedArray(50) != parentArchonIdx) return;
+        if (rc.readSharedArray(51) != 0 || (rc.getTeamLeadAmount(rc.getTeam()) < 180 * countAliveTeamArchonsAfter(parentArchonIdx) && rc.readSharedArray(50) != parentArchonIdx)) return;
 
         if (buildTarget == null) updateBuildTarget();
 

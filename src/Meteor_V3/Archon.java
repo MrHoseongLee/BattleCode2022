@@ -8,6 +8,7 @@ public strictfp class Archon extends Building {
 
     private MapLocation repairTarget = null;
 
+    private int builderCnt = 0;
     private int portableArchonCount;
     private int previousArchonSignal;
 
@@ -127,8 +128,11 @@ public strictfp class Archon extends Building {
 
         if (rc.isActionReady()) {
             if (underAttack) { buildDroid(RobotType.SAGE); buildDroid(RobotType.SOLDIER); }
-            else if ((rc.readSharedArray(52) & (1 << archonIdx)) == 0) {
-                buildDroid(RobotType.BUILDER);
+            else if (builderCnt < 1) {
+                if (lead >= 40) {
+                    buildDroid(RobotType.BUILDER);
+                    builderCnt += 1;
+                }
             } else if (gold >= 20 * countAliveTeamArchonsAfter(archonIdx) || (gold >= 20 && rc.readSharedArray(Idx.nextArchonToBuild) == archonIdx)) {
                 buildDroid(RobotType.SAGE);
                 rc.writeSharedArray(Idx.nextArchonToBuild, getNextAliveTeamArchonIdx(archonIdx));
@@ -148,6 +152,7 @@ public strictfp class Archon extends Building {
         Direction bestDirection = Direction.CENTER; int minRubble = INF;
 
         for (Direction direction : directions) {
+            if (!rc.onTheMap(rc.adjacentLocation(direction))) { continue; }
             int rubble = rc.senseRubble(rc.adjacentLocation(direction));
             if (rc.canBuildRobot(robotType, direction) && minRubble > rubble) { bestDirection = direction; minRubble = rubble; }
         }
