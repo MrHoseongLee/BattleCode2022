@@ -48,7 +48,7 @@ public class Robot {
         RNG.setSeed(rc.getRoundNum());
         team = rc.getTeam();
 
-        if (rc.getType().visionRadiusSquared == 20) { bfs = new BFSDroid(rc); }
+        if (rc.getType() == RobotType.ARCHON) { bfs = new BFSBuilding(rc); }
         else { bfs = new BFSDroid(rc); }
         minimap = new Minimap(rc);
     }
