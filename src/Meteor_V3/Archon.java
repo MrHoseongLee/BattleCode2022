@@ -37,7 +37,7 @@ public strictfp class Archon extends Building {
         final int lead = rc.getTeamLeadAmount(rc.getTeam());
         final int gold = rc.getTeamGoldAmount(rc.getTeam());
         final int buildOrder = rc.readSharedArray(51);
-        final boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 100 + 100;
+        final boolean attacking = rc.getRoundNum() >= n * 100 + 100;
 
         // Reset the minimap (by the archon that is currently alive and has the smallest ID)
         if (archonIdx == getFirstAliveTeamArchonIdx()) {

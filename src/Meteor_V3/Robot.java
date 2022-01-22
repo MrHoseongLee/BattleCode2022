@@ -89,10 +89,10 @@ public class Robot {
         return rc.canSenseRobotAtLocation(location) && rc.senseRobotAtLocation(location).getType().equals(type);
     }
 
-    protected boolean isThereTeamRobotTypeAt(MapLocation location, RobotType type) throws GameActionException {
+    protected boolean isThereEnemyRobotTypeAt(MapLocation location, RobotType type) throws GameActionException {
         if (rc.canSenseRobotAtLocation(location)) {
             RobotInfo robot = rc.senseRobotAtLocation(location);
-            return robot.getType().equals(type) && robot.getTeam().equals(team);
+            return robot.getType().equals(type) && robot.getTeam().equals(team.opponent());
         }
         return false;
     }

@@ -43,21 +43,23 @@ public strictfp class Droid extends Robot {
     }
 
     protected void updateTargetForEvasion(RobotInfo[] nearbyEnemies) throws GameActionException {
-        if(evading) return;
+        if (evading) { return; }
 
         int maxDistance = 0;
         int rubble = rc.senseRubble(currentLocation);
+
         for (RobotInfo robot : nearbyEnemies) {
             if (isDangerous(robot.type)) {
                 maxDistance += currentLocation.distanceSquaredTo(robot.location);
             }
         }
+
         target = currentLocation;
 
         for (Direction direction : directions) {
             MapLocation location = rc.adjacentLocation(direction);
 
-            if (!rc.onTheMap(location) || rc.canSenseRobotAtLocation(location) || rc.senseRubble(location) > rubble + 10) continue;
+            if (!rc.onTheMap(location) || rc.canSenseRobotAtLocation(location) || rc.senseRubble(location) > rubble + 10) { continue; }
 
             int distance = 0;
             for (RobotInfo robot : nearbyEnemies) {
@@ -107,7 +109,7 @@ public strictfp class Droid extends Robot {
             if (!rc.canSenseLocation(location)) { continue; }
             if (state >= 2) { continue; }
 
-            if (isThereRobotTypeAt(location, RobotType.ARCHON) && !isRobotOnSameTeam(rc.senseRobotAtLocation(location))) {
+            if (isThereEnemyRobotTypeAt(location, RobotType.ARCHON)) {
                 if (state == 0) {
                     rc.writeSharedArray(i + Idx.enemyArchonLocationOffset, encode(location, 1));
                     System.out.println("An enemy archon is at " + location);
@@ -127,11 +129,11 @@ public strictfp class Droid extends Robot {
         for (int i = 0; i < n; ++i) {
             int code = rc.readSharedArray(i + Idx.enemyArchonDataOffset);
 
-            int id = decodeID(code);
+            int ID = decodeID(code);
             MapLocation location = decodeLocation(code);
 
             if (location.x != 60 && rc.canSenseLocation(location) && !isThereRobotTypeAt(location, RobotType.ARCHON)) {
-                rc.writeSharedArray(i + Idx.enemyArchonDataOffset, encode(new MapLocation(60, 0), id));
+                rc.writeSharedArray(i + Idx.enemyArchonDataOffset, encode(new MapLocation(60, 0), ID));
             }
         }
 
@@ -168,13 +170,13 @@ public strictfp class Droid extends Robot {
         return -1;
     }
 
-    private int getEnemyArchonIdx(int id) throws GameActionException {
+    private int getEnemyArchonIdx(int ID) throws GameActionException {
         int n = rc.readSharedArray(Idx.enemyArchonCount);
 
         for (int i = 0; i < n; ++i) {
             int code = rc.readSharedArray(i + Idx.enemyArchonDataOffset);
 
-            if (decodeID(code) == id) { return i; }
+            if (decodeID(code) == ID) { return i; }
         }
 
         return n;
