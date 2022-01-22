@@ -6,6 +6,7 @@ public strictfp class Sage extends Droid {
 
     private RobotInfo[] nearbyEnemies;
     private MapLocation attackTarget = null;
+    private boolean isCloseToTeamArchon = false;
     private boolean movingToParentArchon = false;
 
     public Sage(RobotController rc) throws GameActionException {
@@ -15,9 +16,18 @@ public strictfp class Sage extends Droid {
     public void step() throws GameActionException {
         super.step();
 
+        parentArchonLocation = getClosestTeamArchonLocation();
+
         nearbyEnemies = rc.senseNearbyRobots(-1, team.opponent());
 
+        isCloseToTeamArchon = false;
+
+        for (RobotInfo robot : rc.senseNearbyRobots(25, team)) {
+            if (robot.type == RobotType.ARCHON) isCloseToTeamArchon = true;
+        }
+
         final int enemySoldierCount = getEnemySoldierCount();
+        final boolean attacking = rc.getRoundNum() >= rc.readSharedArray(Idx.teamArchonCount) * 100 + 100;
         final MapLocation closest = getClosestEnemySoldier();
 
         // Always attack nearby enemy
@@ -26,6 +36,11 @@ public strictfp class Sage extends Droid {
         // Check enemy in vision
         minimap.reportNearbyEnemies(nearbyEnemies);
         reportNearbyArchons(nearbyEnemies);
+
+        // If low on health, move to parent archon and get healed
+        if (rc.getHealth() <= 10 && !attacking) movingToParentArchon = true;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) <= 20) movingToParentArchon = rc.getHealth() <= 95;
+        if (currentLocation.distanceSquaredTo(parentArchonLocation) < 13) movingToParentArchon = false;
 
         // Reset target if adjacent to it
         if (target != null && currentLocation.isAdjacentTo(target)) { target = null; }
@@ -56,6 +71,7 @@ public strictfp class Sage extends Droid {
         //if (attackTarget != null && !attacking && currentLocation.distanceSquaredTo(parentArchonLocation) > 20 && isProtectedByEnemyArchon(attackTarget)) updateTargetForEvasion(attackTarget);
 
         if (closest != null && currentLocation.distanceSquaredTo(closest) <= 25) updateTargetForEvasion(nearbyEnemies);
+        if (closest != null && rc.getActionCooldownTurns() >= 30 && !isCloseToTeamArchon) updateTargetForEvasion(nearbyEnemies);
 
         if (enemySoldierCount >= 2) {
             minimap.reportEnemy(closest, 3);
@@ -80,7 +96,7 @@ public strictfp class Sage extends Droid {
 
         RobotInfo robot = rc.senseRobotAtLocation(attackTarget);
 
-        if (robot.type == RobotType.ARCHON) rc.envision(AnomalyType.FURY);
+        if (robot.type == RobotType.ARCHON && robot.mode == RobotMode.TURRET && !isCloseToTeamArchon) rc.envision(AnomalyType.FURY);
         else if (!robot.type.isBuilding() && robot.getHealth() <= robot.getType().health * 0.22) rc.envision(AnomalyType.CHARGE);
         else rc.attack(attackTarget);
     }
@@ -91,8 +107,8 @@ public strictfp class Sage extends Droid {
 
         for (RobotInfo robot : rc.senseNearbyRobots(25, team.opponent())) {
             int health = robot.getHealth();
-            if(robot.getType() == RobotType.SOLDIER) { health -= 50; }
-            if(robot.getType() == RobotType.ARCHON) { health -= 100; }
+            if (isDangerous(robot.type)) { health -= 100000; }
+            if (robot.type == RobotType.SAGE || robot.type == RobotType.WATCHTOWER) { health -= 500; }
 
             if(health < minHealth) {
                 minHealth = health;

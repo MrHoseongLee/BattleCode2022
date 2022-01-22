@@ -179,4 +179,23 @@ public strictfp class Droid extends Robot {
 
         return n;
     }
+
+    protected MapLocation getClosestTeamArchonLocation() throws GameActionException {
+        int n = rc.readSharedArray(Idx.teamArchonCount);
+        int minDistance = INF;
+        MapLocation closest = null;
+
+        for (int i = 0; i < n; ++i) {
+            MapLocation location = decodeLocation(rc.readSharedArray(i + Idx.teamArchonDataOffset));
+            if(location.x == 60) continue;
+            int distance = currentLocation.distanceSquaredTo(location);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = location;
+            }
+        }
+
+        return closest;
+    }
 }

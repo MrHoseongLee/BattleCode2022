@@ -97,11 +97,7 @@ public strictfp class Miner extends Droid {
             if (rc.canSenseLocation(location)) {
                 int goldCount = rc.senseGold(location);
                 if (goldCount > 0) {
-                    if (isScorchedEarthBeneficial(location)) {
-                        while (rc.isActionReady() && goldCount > 0) { rc.mineGold(location); goldCount--; }
-                    } else {
-                        while (rc.isActionReady() && goldCount > 1) { rc.mineGold(location); goldCount--; }
-                    }
+                    while (rc.isActionReady() && goldCount > 0) { rc.mineGold(location); goldCount--; }
                 }
             }
         }
