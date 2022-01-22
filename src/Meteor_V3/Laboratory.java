@@ -22,6 +22,6 @@ public strictfp class Laboratory extends Building {
             if (isDangerous(robot.type)) minimap.reportEnemy(robot.location, 3);
         }
 
-        if (minimap.getLevel(currentLocation) < 3 && rc.canTransmute()) rc.transmute();
+        if (minimap.getLevel(currentLocation) < 3 && (rc.readSharedArray(53) == 100 || rc.getTeamLeadAmount(rc.getTeam()) >= 100) && rc.canTransmute()) rc.transmute();
     }
 }

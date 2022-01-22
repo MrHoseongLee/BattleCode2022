@@ -42,6 +42,7 @@ public strictfp class Archon extends Building {
         // Reset the minimap (by the archon that is currently alive and has the smallest ID)
         if (archonIdx == getFirstAliveTeamArchonIdx()) {
             minimap.reset();
+            rc.writeSharedArray(53, 100);
 
             // Report undiscovered enemy archon
             for (int i = 0; i < n * 3; ++i) {
@@ -83,6 +84,9 @@ public strictfp class Archon extends Building {
                 if (isDangerous(robot.type)) minimap.reportEnemy(robot.location, 3);
             }
         }
+
+        boolean mustMineMetal = getNearbyMetalAmount() >= 100 && getTeamMinerCount() < 3;
+        if (mustMineMetal) rc.writeSharedArray(53, archonIdx);
 
         if (rc.getMode() == RobotMode.PORTABLE) {
             if (currentLocation.equals(target)) { 
@@ -128,7 +132,9 @@ public strictfp class Archon extends Building {
 
         if (rc.isActionReady()) {
             if (underAttack) { buildDroid(RobotType.SAGE); buildDroid(RobotType.SOLDIER); }
-            else if (builderCnt < 1) {
+            else if (mustMineMetal) {
+                buildDroid(RobotType.MINER);
+            } else if (builderCnt < 1) {
                 if (lead >= 40) {
                     buildDroid(RobotType.BUILDER);
                     builderCnt += 1;
@@ -254,4 +260,24 @@ public strictfp class Archon extends Building {
         return bestLocation;
     }
 
+    private int getNearbyMetalAmount() throws GameActionException {
+        MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(20);
+        MapLocation[] goldLocations = rc.senseNearbyLocationsWithGold(20);
+        int leadAmount = 0, goldAmount = 0;
+
+        for (MapLocation location : leadLocations) { leadAmount += rc.senseLead(location); }
+        for (MapLocation location : goldLocations) { goldAmount += rc.senseGold(location); }
+
+        return leadAmount + goldAmount * 5;
+    }
+
+    private int getTeamMinerCount() {
+        int count = 0;
+
+        for (RobotInfo robot : rc.senseNearbyRobots(-1, team)) {
+            if (robot.type == RobotType.MINER) { count += 1; }
+        }
+
+        return count;
+    }
 }

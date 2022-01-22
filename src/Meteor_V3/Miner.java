@@ -123,25 +123,25 @@ public strictfp class Miner extends Droid {
     }
 
     private void updateClosestEnemyArchonLocation() throws GameActionException {
-        int n = rc.readSharedArray(Idx.teamArchonCount);
         int minDistance = INF;
+        closestEnemyArchonLocation = null;
 
-        for (int i = 0; i < n * 3; ++i) {
-            int code = rc.readSharedArray(i + Idx.enemyArchonLocationOffset);
+        for (int i = 0; i < rc.readSharedArray(Idx.enemyArchonCount); ++i) {
+            int code = rc.readSharedArray(i + Idx.enemyArchonDataOffset);
 
-            int state = decodeID(code);
             MapLocation location = decodeLocation(code);
 
-            if (state == 1) { 
-                int distance = currentLocation.distanceSquaredTo(location);
-                if (distance < minDistance) { minDistance = distance; closestEnemyArchonLocation = location; }
-            }
+            if (location.x == 60) { continue; }
+
+            int distance = currentLocation.distanceSquaredTo(location);
+            if (distance < minDistance) { minDistance = distance; closestEnemyArchonLocation = location; }
         }
     }
 
     private void updateClosestTeamArchonLocation() throws GameActionException {
         int n = rc.readSharedArray(Idx.teamArchonCount);
         int minDistance = INF;
+        closestTeamArchonLocation = null;
 
         for (int i = 0; i < n; ++i) {
             int code = rc.readSharedArray(i + Idx.teamArchonDataOffset);
