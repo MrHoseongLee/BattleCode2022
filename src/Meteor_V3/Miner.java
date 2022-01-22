@@ -108,9 +108,16 @@ public strictfp class Miner extends Droid {
 
         int minDistance = INF;
         MapLocation[] leadLocations = rc.senseNearbyLocationsWithLead(-1, 2);
+        MapLocation[] goldLocations = rc.senseNearbyLocationsWithGold(-1, 2);
 
         // Loop through all lead locations and find the best one
         for (MapLocation location : leadLocations) {
+            int distance = distanceTo(location);
+            if (distance < minDistance) { minDistance = distance; target = location; }
+        }
+
+        // Loop through all gold locations and find the best one
+        for (MapLocation location : goldLocations) {
             int distance = distanceTo(location);
             if (distance < minDistance) { minDistance = distance; target = location; }
         }
